@@ -1,1 +1,916 @@
-index-landing.html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="TRACACHOC - Système de traçabilité HACCP pour chocolateries artisanales. Gérez vos lots, matières premières, recettes et conformité alimentaire.">
+    <meta name="author" content="Emotions Chocolats">
+    <title>TRACACHOC - Traçabilité Chocolaterie Artisanale</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍫</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --choc-dark: #1a0e05;
+            --choc-rich: #3b1f0b;
+            --choc-medium: #5d3a1a;
+            --choc-warm: #8b4513;
+            --choc-light: #a0522d;
+            --gold: #d4a843;
+            --gold-light: #f0d48a;
+            --gold-bright: #ffd700;
+            --cream: #fdf6e3;
+            --cream-dark: #f5e6c8;
+            --text-dark: #2c1810;
+            --text-light: #f5e6c8;
+            --accent-green: #4a7c59;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-dark);
+            background: var(--cream);
+            overflow-x: hidden;
+        }
+
+        /* ========== NAVIGATION ========== */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 20px 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.4s ease;
+        }
+
+        nav.scrolled {
+            background: rgba(26, 14, 5, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 12px 60px;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+        }
+
+        .nav-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--gold);
+            text-decoration: none;
+            letter-spacing: 2px;
+        }
+
+        .nav-logo span {
+            color: var(--cream);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--cream);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--gold);
+        }
+
+        .nav-cta {
+            background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+            color: var(--choc-dark) !important;
+            padding: 10px 28px;
+            border-radius: 50px;
+            font-weight: 700 !important;
+            transition: transform 0.3s, box-shadow 0.3s !important;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(212, 168, 67, 0.4);
+        }
+
+        /* ========== HERO ========== */
+        .hero {
+            min-height: 100vh;
+            background: linear-gradient(165deg, var(--choc-dark) 0%, var(--choc-rich) 40%, var(--choc-medium) 100%);
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(212,168,67,0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(160,82,45,0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 120px 60px;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 80px;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(212,168,67,0.15);
+            border: 1px solid rgba(212,168,67,0.3);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 13px;
+            color: var(--gold-light);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+            animation: fadeInUp 0.8s ease both;
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(42px, 5.5vw, 72px);
+            font-weight: 900;
+            color: var(--cream);
+            line-height: 1.1;
+            margin-bottom: 24px;
+            animation: fadeInUp 0.8s ease 0.2s both;
+        }
+
+        .hero h1 em {
+            font-style: italic;
+            color: var(--gold);
+        }
+
+        .hero-description {
+            font-size: 18px;
+            color: rgba(245, 230, 200, 0.75);
+            line-height: 1.7;
+            margin-bottom: 40px;
+            max-width: 520px;
+            animation: fadeInUp 0.8s ease 0.4s both;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            animation: fadeInUp 0.8s ease 0.6s both;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+            color: var(--choc-dark);
+            padding: 16px 40px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(212,168,67,0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--cream);
+            padding: 16px 40px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            border: 2px solid rgba(245,230,200,0.3);
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: rgba(212,168,67,0.1);
+        }
+
+        .hero-visual {
+            position: relative;
+            animation: fadeInRight 1s ease 0.4s both;
+        }
+
+        .hero-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(212,168,67,0.2);
+            border-radius: 24px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-bright), var(--gold));
+        }
+
+        .hero-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .hero-card-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .hero-card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(245,230,200,0.08);
+        }
+
+        .hero-card-row:last-child { border: none; }
+
+        .hero-card-label {
+            font-size: 13px;
+            color: rgba(245,230,200,0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .hero-card-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            color: var(--cream);
+            font-weight: 700;
+        }
+
+        .hero-card-value.gold { color: var(--gold); }
+        .hero-card-value.green { color: #6fcf97; }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .hero-stat {
+            text-align: center;
+            padding: 16px;
+            background: rgba(212,168,67,0.08);
+            border-radius: 12px;
+            border: 1px solid rgba(212,168,67,0.15);
+        }
+
+        .hero-stat-number {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--gold);
+        }
+
+        .hero-stat-label {
+            font-size: 11px;
+            color: rgba(245,230,200,0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        /* ========== FEATURES ========== */
+        .features {
+            padding: 120px 60px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--choc-warm);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .section-label::before {
+            content: '';
+            width: 30px;
+            height: 2px;
+            background: var(--gold);
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(32px, 4vw, 48px);
+            font-weight: 900;
+            color: var(--choc-dark);
+            margin-bottom: 16px;
+            line-height: 1.2;
+        }
+
+        .section-subtitle {
+            font-size: 18px;
+            color: var(--choc-warm);
+            max-width: 600px;
+            line-height: 1.6;
+            margin-bottom: 60px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 32px;
+            border: 1px solid rgba(93,58,26,0.08);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--choc-warm));
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(26,14,5,0.1);
+        }
+
+        .feature-card:hover::after {
+            transform: scaleX(1);
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, rgba(212,168,67,0.15), rgba(139,69,19,0.1));
+        }
+
+        .feature-card h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--choc-dark);
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            font-size: 15px;
+            color: var(--choc-warm);
+            line-height: 1.6;
+        }
+
+        /* ========== BENEFITS ========== */
+        .benefits {
+            background: linear-gradient(165deg, var(--choc-dark) 0%, var(--choc-rich) 100%);
+            padding: 120px 60px;
+        }
+
+        .benefits-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .benefits .section-label { color: var(--gold-light); }
+        .benefits .section-title { color: var(--cream); }
+        .benefits .section-subtitle { color: rgba(245,230,200,0.6); }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .benefit-item {
+            display: flex;
+            gap: 20px;
+            padding: 28px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(212,168,67,0.12);
+            border-radius: 16px;
+            transition: all 0.3s;
+        }
+
+        .benefit-item:hover {
+            background: rgba(212,168,67,0.08);
+            border-color: rgba(212,168,67,0.25);
+        }
+
+        .benefit-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .benefit-item h4 {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            color: var(--cream);
+            margin-bottom: 6px;
+        }
+
+        .benefit-item p {
+            font-size: 14px;
+            color: rgba(245,230,200,0.55);
+            line-height: 1.5;
+        }
+
+        /* ========== PRICING ========== */
+        .pricing {
+            padding: 120px 60px;
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: white;
+            border-radius: 24px;
+            padding: 48px 36px;
+            border: 2px solid rgba(93,58,26,0.08);
+            text-align: left;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .pricing-card.featured {
+            border-color: var(--gold);
+            box-shadow: 0 20px 60px rgba(212,168,67,0.15);
+        }
+
+        .pricing-card.featured::before {
+            content: 'POPULAIRE';
+            position: absolute;
+            top: -1px;
+            right: 32px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+            color: var(--choc-dark);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            padding: 6px 16px;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .pricing-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--choc-warm);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .pricing-price {
+            font-family: 'Playfair Display', serif;
+            font-size: 48px;
+            font-weight: 900;
+            color: var(--choc-dark);
+            margin-bottom: 4px;
+        }
+
+        .pricing-price span {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--choc-warm);
+        }
+
+        .pricing-desc {
+            font-size: 14px;
+            color: var(--choc-warm);
+            margin-bottom: 32px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid rgba(93,58,26,0.1);
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 36px;
+        }
+
+        .pricing-features li {
+            font-size: 15px;
+            color: var(--text-dark);
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pricing-features li::before {
+            content: '✓';
+            color: var(--accent-green);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .pricing-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .pricing-btn.primary {
+            background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+            color: var(--choc-dark);
+        }
+
+        .pricing-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(212,168,67,0.4);
+        }
+
+        .pricing-btn.outline {
+            background: transparent;
+            color: var(--choc-dark);
+            border: 2px solid rgba(93,58,26,0.2);
+        }
+
+        .pricing-btn.outline:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        /* ========== FOOTER ========== */
+        footer {
+            background: var(--choc-dark);
+            padding: 60px;
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--gold);
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        .footer-logo span { color: var(--cream); }
+
+        .footer-tagline {
+            font-size: 14px;
+            color: rgba(245,230,200,0.4);
+            margin-bottom: 8px;
+        }
+
+        .footer-copyright {
+            font-size: 12px;
+            color: rgba(245,230,200,0.25);
+            font-style: italic;
+        }
+
+        /* ========== ANIMATIONS ========== */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s ease;
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 968px) {
+            nav { padding: 16px 24px; }
+            nav.scrolled { padding: 10px 24px; }
+            .nav-links { display: none; }
+            .hero-content { grid-template-columns: 1fr; padding: 100px 24px 60px; gap: 40px; }
+            .features { padding: 80px 24px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .benefits { padding: 80px 24px; }
+            .benefits-grid { grid-template-columns: 1fr; }
+            .pricing { padding: 80px 24px; }
+            .pricing-cards { grid-template-columns: 1fr; }
+            footer { padding: 40px 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVIGATION -->
+    <nav id="navbar">
+        <a href="#" class="nav-logo">TRACA<span>CHOC</span></a>
+        <ul class="nav-links">
+            <li><a href="#fonctionnalites">Fonctionnalités</a></li>
+            <li><a href="#avantages">Avantages</a></li>
+            <li><a href="#tarifs">Tarifs</a></li>
+            <li><a href="/app.html" class="nav-cta">Accéder à l'app</a></li>
+        </ul>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero-content">
+            <div>
+                <div class="hero-badge">🍫 Conçu par des chocolatiers</div>
+                <h1>La traçabilité <em>simplifiée</em> pour votre chocolaterie</h1>
+                <p class="hero-description">
+                    TRACACHOC est le système de traçabilité HACCP pensé pour les artisans chocolatiers. 
+                    Lots, matières premières, recettes, conformité — tout en un seul outil, simple et puissant.
+                </p>
+                <div class="hero-buttons">
+                    <a href="/app.html" class="btn-primary">
+                        Essayer gratuitement →
+                    </a>
+                    <a href="#fonctionnalites" class="btn-secondary">
+                        Découvrir
+                    </a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-card">
+                    <div class="hero-card-header">
+                        <div class="hero-card-dot" style="background: #6fcf97;"></div>
+                        <div class="hero-card-dot" style="background: var(--gold);"></div>
+                        <div class="hero-card-dot" style="background: rgba(245,230,200,0.2);"></div>
+                        <span style="color: rgba(245,230,200,0.4); font-size: 12px; margin-left: auto; letter-spacing: 1px;">LOT EN COURS</span>
+                    </div>
+                    <div class="hero-card-row">
+                        <span class="hero-card-label">Lot</span>
+                        <span class="hero-card-value gold">LOT-2026-0219</span>
+                    </div>
+                    <div class="hero-card-row">
+                        <span class="hero-card-label">Produit</span>
+                        <span class="hero-card-value">Praliné Noisette 72%</span>
+                    </div>
+                    <div class="hero-card-row">
+                        <span class="hero-card-label">DLC</span>
+                        <span class="hero-card-value">19/08/2026</span>
+                    </div>
+                    <div class="hero-card-row">
+                        <span class="hero-card-label">Statut</span>
+                        <span class="hero-card-value green">✓ Conforme HACCP</span>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="hero-stat">
+                            <div class="hero-stat-number">24</div>
+                            <div class="hero-stat-label">Lots actifs</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="hero-stat-number">156</div>
+                            <div class="hero-stat-label">MP suivies</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="hero-stat-number">100%</div>
+                            <div class="hero-stat-label">Traçable</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="features" id="fonctionnalites">
+        <div class="reveal">
+            <div class="section-label">Fonctionnalités</div>
+            <h2 class="section-title">Tout ce dont votre<br>chocolaterie a besoin</h2>
+            <p class="section-subtitle">Un outil complet de traçabilité HACCP, conçu spécifiquement pour les artisans chocolatiers.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card reveal">
+                <div class="feature-icon">📦</div>
+                <h3>Gestion des lots</h3>
+                <p>Créez et suivez chaque lot de production avec numérotation automatique, traçabilité des ingrédients et calcul FIFO.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">🧄</div>
+                <h3>Matières premières</h3>
+                <p>Inventaire en temps réel, alertes de stock, DLC, gestion des fournisseurs et archivage automatique.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">📋</div>
+                <h3>Recettes & Fabrication</h3>
+                <p>Enregistrez vos recettes, calculez les quantités automatiquement et déduisez les stocks à la production.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">🏷️</div>
+                <h3>Étiquetage</h3>
+                <p>Génération d'étiquettes conformes avec ingrédients, allergènes, DLC et code-barres pour imprimante thermique.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">📊</div>
+                <h3>Pertes & Statistiques</h3>
+                <p>Suivi des pertes par catégorie, rapports détaillés, export PDF et analyse des coûts de production.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">🎁</div>
+                <h3>Boîtes Mixtes</h3>
+                <p>Assemblez des coffrets multi-produits avec prélèvement FIFO automatique et traçabilité complète.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BENEFITS -->
+    <section class="benefits" id="avantages">
+        <div class="benefits-inner">
+            <div class="reveal">
+                <div class="section-label">Avantages</div>
+                <h2 class="section-title">Pourquoi choisir TRACACHOC ?</h2>
+                <p class="section-subtitle">Développé par un chocolatier pour des chocolatiers.</p>
+            </div>
+            <div class="benefits-grid">
+                <div class="benefit-item reveal">
+                    <div class="benefit-icon">🛡️</div>
+                    <div>
+                        <h4>Conforme HACCP</h4>
+                        <p>Répondez aux exigences de l'AFSCA et des contrôles sanitaires avec une traçabilité complète de la fève au produit fini.</p>
+                    </div>
+                </div>
+                <div class="benefit-item reveal">
+                    <div class="benefit-icon">⚡</div>
+                    <div>
+                        <h4>Simple & rapide</h4>
+                        <p>Interface intuitive pensée pour le terrain. Pas besoin de formation — commencez en 5 minutes.</p>
+                    </div>
+                </div>
+                <div class="benefit-item reveal">
+                    <div class="benefit-icon">☁️</div>
+                    <div>
+                        <h4>Cloud sécurisé</h4>
+                        <p>Vos données sont synchronisées en temps réel et accessibles depuis n'importe quel appareil.</p>
+                    </div>
+                </div>
+                <div class="benefit-item reveal">
+                    <div class="benefit-icon">🇧🇪</div>
+                    <div>
+                        <h4>Made in Belgium</h4>
+                        <p>Conçu à Couthuin par Emotions Chocolats, avec la passion et le savoir-faire de l'artisanat belge.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRICING -->
+    <section class="pricing" id="tarifs">
+        <div class="reveal">
+            <div class="section-label">Tarifs</div>
+            <h2 class="section-title">Des prix adaptés<br>aux artisans</h2>
+            <p class="section-subtitle" style="margin-left: auto; margin-right: auto;">Commencez gratuitement, évoluez selon vos besoins.</p>
+        </div>
+        <div class="pricing-cards">
+            <div class="pricing-card reveal">
+                <div class="pricing-name">Découverte</div>
+                <div class="pricing-price">0€ <span>/mois</span></div>
+                <div class="pricing-desc">Pour découvrir et tester l'outil</div>
+                <ul class="pricing-features">
+                    <li>Jusqu'à 50 lots</li>
+                    <li>Gestion des matières premières</li>
+                    <li>5 recettes</li>
+                    <li>Export PDF basique</li>
+                </ul>
+                <a href="/app.html" class="pricing-btn outline">Commencer gratuitement</a>
+            </div>
+            <div class="pricing-card featured reveal">
+                <div class="pricing-name">Professionnel</div>
+                <div class="pricing-price">39€ <span>/mois</span></div>
+                <div class="pricing-desc">Pour les chocolateries en activité</div>
+                <ul class="pricing-features">
+                    <li>Lots illimités</li>
+                    <li>Recettes illimitées</li>
+                    <li>Étiquetage & impression</li>
+                    <li>Boîtes mixtes</li>
+                    <li>Statistiques & rapports</li>
+                    <li>Support prioritaire</li>
+                </ul>
+                <a href="/app.html" class="pricing-btn primary">Essai gratuit 30 jours →</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-logo">TRACA<span>CHOC</span></div>
+        <div class="footer-tagline">Système de traçabilité pour chocolateries artisanales</div>
+        <div class="footer-copyright">© 2024-2026 Emotions Chocolats ® — Tous droits réservés</div>
+    </footer>
+
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        // Reveal on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, i) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => entry.target.classList.add('visible'), i * 100);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    </script>
+
+</body>
+</html>
