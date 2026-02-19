@@ -1,0 +1,9 @@
+{
+  "name": "tracachoc-saas",
+  "version": "1.0.0",
+  "description": "TRACACHOC - Système de traçabilité pour chocolateries",
+  "dependencies": {
+    "@mollie/api-client": "^4.0.0",
+    "@supabase/supabase-js": "^2.39.0"
+  }
+}
