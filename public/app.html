@@ -2288,7 +2288,11 @@
                     <div class="form-grid" style="margin-bottom: 15px;">
                         <div class="form-group">
                             <label for="reception-mp-nom">Nom de la Matière Première *</label>
-                            <input type="text" id="reception-mp-nom" placeholder="Ex: Cacao Venezuela" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border: 2px solid #ff9800;">
+                            <select id="reception-mp-nom-select" onchange="onReceptionMPRefSelect(this)" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border: 2px solid #ff9800;">
+                                <option value="">-- Sélectionner une MP --</option>
+                                <option value="__custom__">✏️ Saisie libre...</option>
+                            </select>
+                            <input type="text" id="reception-mp-nom" placeholder="Tapez le nom de la MP" style="display: none; margin-top: 8px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border: 2px solid #ff9800;">
                         </div>
                         
                         <div class="form-group">
@@ -2542,7 +2546,12 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="mp-nom">Nom de la Matière Première *</label>
-                        <input type="text" id="mp-nom" placeholder="Ex: Cacao Venezuela" required style="background: linear-gradient(135deg, #efebe9 0%, #d7ccc8 100%); border: 2px solid #8d6e63; font-weight: 600;">
+                        <select id="mp-nom-select" onchange="onMPRefSelect(this)" required style="background: linear-gradient(135deg, #efebe9 0%, #d7ccc8 100%); border: 2px solid #8d6e63; font-weight: 600;">
+                            <option value="">-- Sélectionner une MP --</option>
+                            <!-- MP référencées chargées dynamiquement -->
+                            <option value="__custom__">✏️ Saisie libre...</option>
+                        </select>
+                        <input type="text" id="mp-nom" placeholder="Tapez le nom de la MP" style="display: none; margin-top: 8px; background: linear-gradient(135deg, #efebe9 0%, #d7ccc8 100%); border: 2px solid #8d6e63; font-weight: 600;">
                     </div>
                     
                     <div class="form-group">
@@ -2915,6 +2924,95 @@
                     </table>
                 </div>
             </div>
+
+            <div style="margin-bottom: 30px;">
+                <h3>🧄 Gestion des Matières Premières Référencées</h3>
+                
+                <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 15px; border-radius: 12px; margin-bottom: 20px; border-left: 5px solid #4caf50;">
+                    <strong style="color: #2e7d32;">💡 Créez ici votre liste de matières premières.</strong>
+                    <div style="margin-top: 5px; color: #388e3c; font-size: 14px;">
+                        Elles apparaîtront dans un menu déroulant lors de l'ajout d'une nouvelle MP, pour éviter les erreurs de saisie.
+                    </div>
+                </div>
+
+                <div id="mp-ref-form" style="background: linear-gradient(135deg, #efebe9 0%, #d7ccc8 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px solid #8d6e63;">
+                    <h4 style="color: #5d4037;">Ajouter/Modifier une Matière Première</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="config-mp-nom">Nom *</label>
+                            <input type="text" id="config-mp-nom" placeholder="Ex: Cacao Venezuela 72%" required style="background: linear-gradient(135deg, #fff 0%, #efebe9 100%); border: 2px solid #6d4c41; font-weight: 600;">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="config-mp-categorie">Catégorie</label>
+                            <select id="config-mp-categorie" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border: 2px solid #ff9800;">
+                                <option value="">Sélectionner</option>
+                                <option value="cacao">🍫 Cacao / Chocolat</option>
+                                <option value="sucre">🍬 Sucres</option>
+                                <option value="laitier">🥛 Produits Laitiers</option>
+                                <option value="fruits-secs">🌰 Fruits Secs & Oléagineux</option>
+                                <option value="epices">🌿 Épices & Arômes</option>
+                                <option value="matieres-grasses">🧈 Matières Grasses</option>
+                                <option value="additifs">⚗️ Additifs & Auxiliaires</option>
+                                <option value="autre">📦 Autre</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="config-mp-fournisseur">Fournisseur par défaut</label>
+                            <input type="text" id="config-mp-fournisseur" placeholder="Ex: Mayata" style="background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border: 2px solid #9c27b0;">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="config-mp-unite">Unité</label>
+                            <select id="config-mp-unite" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 2px solid #2196f3;">
+                                <option value="kg">kg</option>
+                                <option value="g">g</option>
+                                <option value="L">L</option>
+                                <option value="unité">unité</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="config-mp-prix">Prix unitaire (€)</label>
+                            <input type="number" id="config-mp-prix" step="0.01" min="0" placeholder="Ex: 25.00" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 2px solid #4caf50;">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="config-mp-stock-mini">Stock minimum</label>
+                            <input type="number" id="config-mp-stock-mini" step="0.1" min="0" placeholder="Ex: 5" style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border: 2px solid #f44336;">
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="config-mp-edit-index" value="-1">
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button type="button" class="btn" onclick="saveMPRef()">💾 Enregistrer MP</button>
+                        <button type="button" class="btn btn-secondary" onclick="resetMPRefForm()">🔄 Réinitialiser</button>
+                    </div>
+                </div>
+                
+                <h4>Liste des Matières Premières Référencées (<span id="mp-ref-count">0</span>)</h4>
+                <div class="table-responsive">
+                    <table class="data-table" id="mp-ref-table">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Catégorie</th>
+                                <th>Fournisseur</th>
+                                <th>Unité</th>
+                                <th>Prix</th>
+                                <th>Stock mini</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Les MP référencées seront affichées ici -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             </div>
         </div>
 
@@ -4257,6 +4355,7 @@
         let filteredLots = [];
         let filteredReceptions = [];
         let productsConfig = [];
+        let mpRefConfig = [];
         let recipesConfig = []; // Nouveau : recettes de production
         let generalSettings = {};
         let currentPhotos = [];
@@ -4688,11 +4787,13 @@
                         else if (config.type === 'settings') generalSettings = config.data || {};
                         else if (config.type === 'categories') categoriesMP = config.data || categoriesMP;
                         else if (config.type === 'recipes') recipesConfig = config.data || [];
+                        else if (config.type === 'mp_references') mpRefConfig = config.data || [];
                     });
                     console.log('✅ Configuration chargée');
                 } else {
                     productsConfig = [...defaultProductsConfig];
                     recipesConfig = [];
+                    mpRefConfig = [];
                     generalSettings = { entreprise: 'Emotions Chocolats - Couthuin, Belgium', stockAlerte: 20 };
                 }
                 
@@ -4708,6 +4809,8 @@
                 updateProductSelects();
                 updateRecipeProductSelects();
                 updateRecipeIngredientSelect();
+                renderMPRefTable();
+                updateMPRefSelects();
                 
                 // Initialiser les listes filtrées AVANT l'affichage
                 filteredLots = [...lots];
@@ -8997,6 +9100,8 @@
         
         function clearMPForm() {
             document.getElementById('mp-nom').value = '';
+            document.getElementById('mp-nom').style.display = 'none';
+            document.getElementById('mp-nom-select').value = '';
             document.getElementById('mp-categorie').selectedIndex = 0;
             document.getElementById('mp-lot').value = '';
             document.getElementById('mp-fournisseur').value = '';
@@ -9414,7 +9519,20 @@
             editingMPId = id;
             
             // Remplir le formulaire avec les données existantes
-            document.getElementById('mp-nom').value = mp.nom;
+            const mpSelect = document.getElementById('mp-nom-select');
+            const mpInput = document.getElementById('mp-nom');
+            mpInput.value = mp.nom;
+            
+            // Vérifier si la MP existe dans le select
+            const selectOption = Array.from(mpSelect.options).find(o => o.value === mp.nom);
+            if (selectOption) {
+                mpSelect.value = mp.nom;
+                mpInput.style.display = 'none';
+            } else {
+                mpSelect.value = '__custom__';
+                mpInput.style.display = 'block';
+            }
+            
             document.getElementById('mp-categorie').value = mp.categorie || 'autre';
             document.getElementById('mp-lot').value = mp.lot;
             document.getElementById('mp-fournisseur').value = mp.fournisseur;
@@ -9432,8 +9550,7 @@
             }
             
             // Faire défiler vers le formulaire
-            document.getElementById('mp-nom').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            document.getElementById('mp-nom').focus();
+            document.getElementById('mp-nom-select').scrollIntoView({ behavior: 'smooth', block: 'center' });
             
             showAlert(`✏️ Mode édition : "${mp.nom}"\n\nModifiez les champs et cliquez sur "Enregistrer".\nLe formulaire est surligné en orange.`, 'warning');
         }
@@ -11489,6 +11606,244 @@
                 showAlert(`⚠️ Erreur lors de la sauvegarde des catégories:\n${error.message}\n\nDonnées sauvegardées localement.`, 'warning');
                 saveToLocalStorage();
                 return { success: false, error };
+            }
+        }
+
+        // ==========================================
+        // GESTION DES MP RÉFÉRENCÉES
+        // ==========================================
+        
+        function saveMPRef() {
+            const nom = document.getElementById('config-mp-nom').value.trim();
+            const categorie = document.getElementById('config-mp-categorie').value;
+            const fournisseur = document.getElementById('config-mp-fournisseur').value.trim();
+            const unite = document.getElementById('config-mp-unite').value;
+            const prix = parseFloat(document.getElementById('config-mp-prix').value) || 0;
+            const stockMini = parseFloat(document.getElementById('config-mp-stock-mini').value) || 0;
+            const editIndex = parseInt(document.getElementById('config-mp-edit-index').value);
+            
+            if (!nom) {
+                showAlert('❌ Le nom de la MP est obligatoire', 'danger');
+                return;
+            }
+            
+            const mpData = { nom, categorie, fournisseur, unite, prix, stockMini };
+            
+            if (editIndex >= 0) {
+                mpRefConfig[editIndex] = mpData;
+                showAlert('✅ MP mise à jour : ' + nom, 'success');
+            } else {
+                // Vérifier doublon
+                if (mpRefConfig.some(mp => mp.nom.toLowerCase() === nom.toLowerCase())) {
+                    showAlert('⚠️ Cette MP existe déjà dans la liste', 'warning');
+                    return;
+                }
+                mpRefConfig.push(mpData);
+                showAlert('✅ MP ajoutée : ' + nom, 'success');
+            }
+            
+            saveMPRefConfig();
+            renderMPRefTable();
+            updateMPRefSelects();
+            resetMPRefForm();
+        }
+        
+        function resetMPRefForm() {
+            document.getElementById('config-mp-nom').value = '';
+            document.getElementById('config-mp-categorie').value = '';
+            document.getElementById('config-mp-fournisseur').value = '';
+            document.getElementById('config-mp-unite').value = 'kg';
+            document.getElementById('config-mp-prix').value = '';
+            document.getElementById('config-mp-stock-mini').value = '';
+            document.getElementById('config-mp-edit-index').value = '-1';
+        }
+        
+        function editMPRef(index) {
+            const mp = mpRefConfig[index];
+            if (!mp) return;
+            document.getElementById('config-mp-nom').value = mp.nom || '';
+            document.getElementById('config-mp-categorie').value = mp.categorie || '';
+            document.getElementById('config-mp-fournisseur').value = mp.fournisseur || '';
+            document.getElementById('config-mp-unite').value = mp.unite || 'kg';
+            document.getElementById('config-mp-prix').value = mp.prix || '';
+            document.getElementById('config-mp-stock-mini').value = mp.stockMini || '';
+            document.getElementById('config-mp-edit-index').value = index;
+            document.getElementById('config-mp-nom').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function deleteMPRef(index) {
+            if (!confirm('Supprimer "' + mpRefConfig[index].nom + '" de la liste ?')) return;
+            mpRefConfig.splice(index, 1);
+            saveMPRefConfig();
+            renderMPRefTable();
+            updateMPRefSelects();
+            showAlert('✅ MP supprimée de la liste', 'success');
+        }
+        
+        function renderMPRefTable() {
+            const tbody = document.querySelector('#mp-ref-table tbody');
+            document.getElementById('mp-ref-count').textContent = mpRefConfig.length;
+            
+            if (mpRefConfig.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#999;">Aucune MP référencée. Ajoutez-en via le formulaire ci-dessus.</td></tr>';
+                return;
+            }
+            
+            const catLabels = {
+                'cacao': '🍫 Cacao', 'sucre': '🍬 Sucres', 'laitier': '🥛 Laitiers',
+                'fruits-secs': '🌰 Fruits Secs', 'epices': '🌿 Épices', 
+                'matieres-grasses': '🧈 Mat. Grasses', 'additifs': '⚗️ Additifs', 'autre': '📦 Autre'
+            };
+            
+            tbody.innerHTML = mpRefConfig.map((mp, i) => `
+                <tr>
+                    <td><strong>${mp.nom}</strong></td>
+                    <td>${catLabels[mp.categorie] || mp.categorie || '-'}</td>
+                    <td>${mp.fournisseur || '-'}</td>
+                    <td>${mp.unite || 'kg'}</td>
+                    <td>${mp.prix ? mp.prix.toFixed(2) + '€' : '-'}</td>
+                    <td>${mp.stockMini || '-'}</td>
+                    <td>
+                        <button class="btn btn-small" onclick="editMPRef(${i})" style="background: #2196f3; color: white; margin: 2px;">✏️</button>
+                        <button class="btn btn-small" onclick="deleteMPRef(${i})" style="background: #f44336; color: white; margin: 2px;">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        async function saveMPRefConfig() {
+            if (!isOnline || !supabaseClient) {
+                saveToLocalStorage();
+                return;
+            }
+            try {
+                const { data: existing } = await supabaseClient
+                    .from('configuration')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .eq('type', 'mp_references')
+                    .single();
+                
+                const configData = {
+                    type: 'mp_references',
+                    user_id: currentUser ? currentUser.id : null,
+                    data: mpRefConfig
+                };
+                
+                if (existing) {
+                    await supabaseClient.from('configuration').update({ data: mpRefConfig }).eq('id', existing.id);
+                } else {
+                    await supabaseClient.from('configuration').insert(configData);
+                }
+                console.log('✅ MP référencées sauvegardées');
+            } catch (error) {
+                console.error('❌ Erreur sauvegarde MP ref:', error);
+            }
+        }
+        
+        function updateMPRefSelects() {
+            // Mettre à jour les selects dans le formulaire MP et réception
+            const selects = ['mp-nom-select', 'reception-mp-nom-select'];
+            
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (!select) return;
+                
+                // Sauvegarder la valeur actuelle
+                const currentVal = select.value;
+                
+                // Reconstruire les options
+                let options = '<option value="">-- Sélectionner une MP --</option>';
+                
+                // Grouper par catégorie
+                const catLabels = {
+                    'cacao': '🍫 Cacao / Chocolat', 'sucre': '🍬 Sucres', 'laitier': '🥛 Produits Laitiers',
+                    'fruits-secs': '🌰 Fruits Secs', 'epices': '🌿 Épices & Arômes', 
+                    'matieres-grasses': '🧈 Matières Grasses', 'additifs': '⚗️ Additifs', 'autre': '📦 Autre', '': '📦 Autre'
+                };
+                
+                const grouped = {};
+                mpRefConfig.forEach(mp => {
+                    const cat = mp.categorie || '';
+                    if (!grouped[cat]) grouped[cat] = [];
+                    grouped[cat].push(mp);
+                });
+                
+                Object.keys(grouped).sort().forEach(cat => {
+                    const label = catLabels[cat] || cat || 'Autre';
+                    options += `<optgroup label="${label}">`;
+                    grouped[cat].sort((a, b) => a.nom.localeCompare(b.nom)).forEach(mp => {
+                        options += `<option value="${mp.nom}" data-categorie="${mp.categorie || ''}" data-fournisseur="${mp.fournisseur || ''}" data-unite="${mp.unite || 'kg'}" data-prix="${mp.prix || 0}" data-stock-mini="${mp.stockMini || 0}">${mp.nom}</option>`;
+                    });
+                    options += '</optgroup>';
+                });
+                
+                options += '<option value="__custom__">✏️ Saisie libre...</option>';
+                select.innerHTML = options;
+                
+                // Restaurer la valeur
+                if (currentVal) select.value = currentVal;
+            });
+        }
+        
+        function onMPRefSelect(select) {
+            const val = select.value;
+            const nomInput = document.getElementById('mp-nom');
+            
+            if (val === '__custom__') {
+                nomInput.style.display = 'block';
+                nomInput.value = '';
+                nomInput.focus();
+                return;
+            }
+            
+            nomInput.style.display = 'none';
+            
+            if (val && val !== '') {
+                nomInput.value = val;
+                
+                // Auto-remplir les champs depuis la MP référencée
+                const option = select.selectedOptions[0];
+                if (option) {
+                    const cat = option.dataset.categorie;
+                    const fourn = option.dataset.fournisseur;
+                    const unite = option.dataset.unite;
+                    const prix = option.dataset.prix;
+                    const stockMini = option.dataset.stockMini;
+                    
+                    if (cat) document.getElementById('mp-categorie').value = cat;
+                    if (fourn) document.getElementById('mp-fournisseur').value = fourn;
+                    if (unite) document.getElementById('mp-unite').value = unite;
+                    if (prix && prix !== '0') document.getElementById('mp-prix').value = prix;
+                    if (stockMini && stockMini !== '0') document.getElementById('mp-stock-mini').value = stockMini;
+                }
+            }
+        }
+        
+        function onReceptionMPRefSelect(select) {
+            const val = select.value;
+            const nomInput = document.getElementById('reception-mp-nom');
+            
+            if (val === '__custom__') {
+                nomInput.style.display = 'block';
+                nomInput.value = '';
+                nomInput.focus();
+                return;
+            }
+            
+            nomInput.style.display = 'none';
+            
+            if (val && val !== '') {
+                nomInput.value = val;
+                
+                // Auto-remplir le fournisseur si disponible
+                const option = select.selectedOptions[0];
+                if (option && option.dataset.fournisseur) {
+                    const fournInput = document.getElementById('reception-fournisseur');
+                    if (fournInput && !fournInput.value) {
+                        fournInput.value = option.dataset.fournisseur;
+                    }
+                }
             }
         }
 
