@@ -2989,6 +2989,7 @@
                     <div style="text-align: center; margin-top: 20px;">
                         <button type="button" class="btn" onclick="saveMPRef()">💾 Enregistrer MP</button>
                         <button type="button" class="btn btn-secondary" onclick="resetMPRefForm()">🔄 Réinitialiser</button>
+                        <button type="button" class="btn" onclick="importMPFromStock()" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); margin-left: 10px;">📥 Importer depuis le stock existant</button>
                     </div>
                 </div>
                 
@@ -11678,6 +11679,51 @@
             renderMPRefTable();
             updateMPRefSelects();
             showAlert('✅ MP supprimée de la liste', 'success');
+        }
+        
+        function importMPFromStock() {
+            if (!matieresPremières || matieresPremières.length === 0) {
+                showAlert('❌ Aucune matière première en stock', 'danger');
+                return;
+            }
+            
+            const existingNames = new Set(mpRefConfig.map(mp => mp.nom.toLowerCase().trim()));
+            let added = 0;
+            const mpParNom = {};
+            
+            matieresPremières.filter(mp => !mp.archived).forEach(mp => {
+                const key = (mp.nom || '').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                if (!key) return;
+                if (!mpParNom[key] || (mp.cout && mp.cout > 0 && (!mpParNom[key].cout || mpParNom[key].cout === 0))) {
+                    mpParNom[key] = mp;
+                }
+            });
+            
+            Object.values(mpParNom).forEach(mp => {
+                const nomKey = mp.nom.toLowerCase().trim();
+                if (!existingNames.has(nomKey)) {
+                    mpRefConfig.push({
+                        nom: mp.nom,
+                        categorie: mp.categorie || '',
+                        fournisseur: mp.fournisseur || '',
+                        unite: 'kg',
+                        prix: mp.cout || 0,
+                        stockMini: mp.stockMini || mp.stock_mini || 0
+                    });
+                    existingNames.add(nomKey);
+                    added++;
+                }
+            });
+            
+            if (added > 0) {
+                mpRefConfig.sort((a, b) => a.nom.localeCompare(b.nom));
+                saveMPRefConfig();
+                renderMPRefTable();
+                updateMPRefSelects();
+                showAlert(`✅ ${added} matière(s) première(s) importée(s) depuis le stock`, 'success');
+            } else {
+                showAlert('ℹ️ Toutes les MP du stock sont déjà dans la liste', 'info');
+            }
         }
         
         function renderMPRefTable() {
