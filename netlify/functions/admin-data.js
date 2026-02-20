@@ -54,6 +54,7 @@ exports.handler = async (event) => {
         const combined = userList.map(user => {
             const sub = subs.find(s => s.user_id === user.id);
             return {
+                user_id: user.id,
                 email: user.email,
                 created_at: user.created_at,
                 plan: sub ? sub.plan : 'free',
