@@ -1703,6 +1703,7 @@
             <button class="tab" onclick="showTab('recettes')">🧪 Recettes</button>
             <button class="tab" onclick="showTab('configuration')">Configuration</button>
             <button class="tab" onclick="showTab('rapports')">Rapports</button>
+            <button class="tab" id="admin-tab-btn" onclick="showTab('admin')" style="display:none; background: linear-gradient(135deg, #d4a843, #ffd700); color: #1a0e05;">👑 Admin</button>
             <button class="tab" onclick="showTab('archives')">📦 Archives</button>
         </div>
 
@@ -3231,6 +3232,48 @@
                 </table>
             </div>
         </div>
+
+        <!-- ADMIN DASHBOARD -->
+        <div id="admin" class="tab-content">
+            <h2>👑 Dashboard Administrateur</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="summary-number" id="admin-total-users">-</div>
+                    <div class="summary-label">Utilisateurs</div>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #d4edda, #c3e6cb);">
+                    <div class="summary-number" id="admin-active-subs">-</div>
+                    <div class="summary-label">Abonnements actifs</div>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #fff3cd, #ffeaa7);">
+                    <div class="summary-number" id="admin-revenue">-</div>
+                    <div class="summary-label">Revenus mensuels</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>📋 Liste des abonnements</h3>
+                    <button class="btn btn-primary" onclick="loadAdminData()" style="font-size: 14px; padding: 8px 16px;">🔄 Rafraîchir</button>
+                </div>
+                <table class="data-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Plan</th>
+                            <th>Statut</th>
+                            <th>Début</th>
+                            <th>Expiration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-subs-table">
+                        <tr><td colspan="5" style="text-align: center; color: #999;">Cliquez sur Rafraîchir pour charger les données</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
     <!-- Modal pour l'édition de lots -->
@@ -3814,6 +3857,53 @@
             document.getElementById('paywall-container').style.display = 'flex';
         }
         
+        async function loadAdminData() {
+            if (!isAdmin || !currentUser) return;
+            
+            try {
+                document.getElementById('admin-subs-table').innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Chargement...</td></tr>';
+                
+                const response = await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminEmail: currentUser.email })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showAlert('❌ ' + data.error, 'danger');
+                    return;
+                }
+                
+                // Mettre à jour les compteurs
+                document.getElementById('admin-total-users').textContent = data.totalUsers || 0;
+                document.getElementById('admin-active-subs').textContent = data.activeSubscriptions || 0;
+                document.getElementById('admin-revenue').textContent = (data.monthlyRevenue || 0) + '€';
+                
+                // Remplir le tableau
+                const tbody = document.getElementById('admin-subs-table');
+                if (!data.users || data.users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Aucun utilisateur</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = data.users.map(u => `
+                    <tr>
+                        <td>${u.email}</td>
+                        <td><span style="padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; background: ${u.plan === 'pro' ? '#d4edda' : '#f0f0f0'}; color: ${u.plan === 'pro' ? '#155724' : '#666'};">${u.plan === 'pro' ? '⭐ Pro' : 'Gratuit'}</span></td>
+                        <td><span style="padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; background: ${u.status === 'active' ? '#d4edda' : '#f8d7da'}; color: ${u.status === 'active' ? '#155724' : '#721c24'};">${u.status === 'active' ? '✅ Actif' : '❌ Inactif'}</span></td>
+                        <td>${u.started_at ? new Date(u.started_at).toLocaleDateString('fr-BE') : '-'}</td>
+                        <td>${u.expires_at ? new Date(u.expires_at).toLocaleDateString('fr-BE') : '-'}</td>
+                    </tr>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Erreur chargement admin:', error);
+                showAlert('❌ Erreur chargement données admin', 'danger');
+            }
+        }
+        
         function showApp() {
             document.getElementById('auth-container').style.display = 'none';
             document.getElementById('paywall-container').style.display = 'none';
@@ -3825,12 +3915,29 @@
                 document.getElementById('user-email-dropdown').textContent = currentUser.email;
             }
             
+            // Afficher l'onglet Admin si administrateur
+            if (isAdmin) {
+                document.getElementById('admin-tab-btn').style.display = '';
+            }
+            
             // Charger les données de l'utilisateur
             loadFromSupabase();
         }
         
+        // Liste des emails administrateurs
+        const ADMIN_EMAILS = ['info@emotionschocolats.be'];
+        let isAdmin = false;
+        
         async function showAppWithSubscriptionCheck() {
             if (!currentUser) { showAuth(); return; }
+            
+            // Bypass pour les admins
+            isAdmin = ADMIN_EMAILS.includes(currentUser.email);
+            if (isAdmin) {
+                console.log('👑 Accès admin détecté');
+                showApp();
+                return;
+            }
             
             // Vérifier le paramètre payment=success dans l'URL
             const urlParams = new URLSearchParams(window.location.search);
