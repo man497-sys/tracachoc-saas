@@ -3281,7 +3281,7 @@
 
             <div style="margin-top: 30px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3>📋 Liste des abonnements</h3>
+                    <h3>📋 Liste des utilisateurs</h3>
                     <button class="btn btn-primary" onclick="loadAdminData()" style="font-size: 14px; padding: 8px 16px;">🔄 Rafraîchir</button>
                 </div>
                 <table class="data-table" style="width: 100%;">
@@ -3292,12 +3292,72 @@
                             <th>Statut</th>
                             <th>Début</th>
                             <th>Expiration</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="admin-subs-table">
-                        <tr><td colspan="5" style="text-align: center; color: #999;">Cliquez sur Rafraîchir pour charger les données</td></tr>
+                        <tr><td colspan="6" style="text-align: center; color: #999;">Cliquez sur Rafraîchir pour charger les données</td></tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Détail client -->
+            <div id="admin-client-detail" style="display: none; margin-top: 30px; background: #f8f9fa; border-radius: 16px; padding: 30px; border: 2px solid #e0e0e0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 id="admin-client-title">📊 Données du client</h3>
+                    <button class="btn" onclick="document.getElementById('admin-client-detail').style.display='none'" style="font-size: 14px; padding: 8px 16px; background: #dc3545; color: white;">✕ Fermer</button>
+                </div>
+                
+                <div class="summary-cards" id="admin-client-stats">
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h4 style="margin-bottom: 10px;">📦 Derniers lots</h4>
+                    <table class="data-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Numéro</th>
+                                <th>Produit</th>
+                                <th>Date</th>
+                                <th>Quantité</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-client-lots"></tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h4 style="margin-bottom: 10px;">🧄 Matières premières</h4>
+                    <table class="data-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Fournisseur</th>
+                                <th>Stock</th>
+                                <th>Unité</th>
+                                <th>DLC</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-client-mp"></tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h4 style="margin-bottom: 10px;">📉 Pertes récentes</h4>
+                    <table class="data-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Matière</th>
+                                <th>Quantité</th>
+                                <th>Raison</th>
+                                <th>Date</th>
+                                <th>Valeur</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-client-losses"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -3976,23 +4036,123 @@
                 // Remplir le tableau
                 const tbody = document.getElementById('admin-subs-table');
                 if (!data.users || data.users.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Aucun utilisateur</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">Aucun utilisateur</td></tr>';
                     return;
                 }
                 
-                tbody.innerHTML = data.users.map(u => `
+                // Stocker les données pour le détail
+                window._adminUsers = data.users;
+                
+                tbody.innerHTML = data.users.map((u, i) => `
                     <tr>
                         <td>${u.email}</td>
                         <td><span style="padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; background: ${u.plan === 'pro' ? '#d4edda' : '#f0f0f0'}; color: ${u.plan === 'pro' ? '#155724' : '#666'};">${u.plan === 'pro' ? '⭐ Pro' : 'Gratuit'}</span></td>
                         <td><span style="padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; background: ${u.status === 'active' ? '#d4edda' : '#f8d7da'}; color: ${u.status === 'active' ? '#155724' : '#721c24'};">${u.status === 'active' ? '✅ Actif' : '❌ Inactif'}</span></td>
                         <td>${u.started_at ? new Date(u.started_at).toLocaleDateString('fr-BE') : '-'}</td>
                         <td>${u.expires_at ? new Date(u.expires_at).toLocaleDateString('fr-BE') : '-'}</td>
+                        <td><button onclick="viewClientData('${u.user_id}', '${u.email}')" style="padding: 6px 14px; background: linear-gradient(135deg, #8B4513, #a0522d); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600;">👁 Voir</button></td>
                     </tr>
                 `).join('');
                 
             } catch (error) {
                 console.error('Erreur chargement admin:', error);
                 showAlert('❌ Erreur chargement données admin', 'danger');
+            }
+        }
+        
+        async function viewClientData(userId, email) {
+            if (!isAdmin || !userId) return;
+            
+            document.getElementById('admin-client-title').textContent = '📊 Données de ' + email;
+            document.getElementById('admin-client-detail').style.display = 'block';
+            document.getElementById('admin-client-lots').innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Chargement...</td></tr>';
+            document.getElementById('admin-client-mp').innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Chargement...</td></tr>';
+            document.getElementById('admin-client-losses').innerHTML = '<tr><td colspan="5" style="text-align:center;">⏳ Chargement...</td></tr>';
+            
+            // Scroll vers le détail
+            document.getElementById('admin-client-detail').scrollIntoView({ behavior: 'smooth' });
+            
+            try {
+                const response = await fetch('/.netlify/functions/admin-client-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminEmail: currentUser.email, userId: userId })
+                });
+                
+                const data = await response.json();
+                if (data.error) { showAlert('❌ ' + data.error, 'danger'); return; }
+                
+                // Stats
+                document.getElementById('admin-client-stats').innerHTML = `
+                    <div class="summary-card">
+                        <div class="summary-number">${data.totalLots}</div>
+                        <div class="summary-label">Lots</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-number">${data.totalMP}</div>
+                        <div class="summary-label">Matières premières</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-number">${data.totalLosses}</div>
+                        <div class="summary-label">Pertes</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-number">${data.totalReceptions}</div>
+                        <div class="summary-label">Réceptions</div>
+                    </div>
+                `;
+                
+                // Lots
+                const lotsBody = document.getElementById('admin-client-lots');
+                if (data.lots && data.lots.length > 0) {
+                    lotsBody.innerHTML = data.lots.map(l => `
+                        <tr>
+                            <td><strong>${l.numero || '-'}</strong></td>
+                            <td>${l.produit || '-'}</td>
+                            <td>${l.date ? new Date(l.date).toLocaleDateString('fr-BE') : '-'}</td>
+                            <td>${l.quantite || 0} ${l.unite || 'kg'}</td>
+                            <td>${l.statut || '-'}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    lotsBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Aucun lot</td></tr>';
+                }
+                
+                // MP
+                const mpBody = document.getElementById('admin-client-mp');
+                if (data.mp && data.mp.length > 0) {
+                    mpBody.innerHTML = data.mp.map(m => `
+                        <tr>
+                            <td><strong>${m.nom || '-'}</strong></td>
+                            <td>${m.fournisseur || '-'}</td>
+                            <td>${m.quantite_actuelle || 0}</td>
+                            <td>${m.unite || 'kg'}</td>
+                            <td>${m.dlc ? new Date(m.dlc).toLocaleDateString('fr-BE') : '-'}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    mpBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Aucune MP</td></tr>';
+                }
+                
+                // Pertes
+                const lossesBody = document.getElementById('admin-client-losses');
+                if (data.losses && data.losses.length > 0) {
+                    lossesBody.innerHTML = data.losses.map(l => `
+                        <tr>
+                            <td>${l.matierepremiere || '-'}</td>
+                            <td>${l.quantity || 0}</td>
+                            <td>${l.reason || '-'}</td>
+                            <td>${l.date ? new Date(l.date).toLocaleDateString('fr-BE') : '-'}</td>
+                            <td>${(l.valeurperte || 0).toFixed(2)}€</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    lossesBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Aucune perte</td></tr>';
+                }
+                
+            } catch (error) {
+                console.error('Erreur chargement client:', error);
+                showAlert('❌ Erreur chargement données client', 'danger');
             }
         }
         
