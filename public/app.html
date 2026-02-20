@@ -11957,12 +11957,26 @@
                     categories[cat.id] = [];
                 });
             
-            // Regrouper les MP par nom (garder seulement une entrée par nom unique)
+            // D'abord ajouter les MP référencées (elles apparaissent même sans stock)
+            if (mpRefConfig && mpRefConfig.length > 0) {
+                mpRefConfig.forEach(mp => {
+                    const nomNormalized = (mp.nom || '').toLowerCase().trim()
+                        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    if (!mpParNom[nomNormalized]) {
+                        mpParNom[nomNormalized] = {
+                            nom: mp.nom,
+                            categorie: mp.categorie || 'autre',
+                            cout: mp.prix || 0
+                        };
+                    }
+                });
+            }
+            
+            // Ensuite ajouter les MP en stock (écrase si même nom = données plus à jour)
             matieresPremières.filter(mp => !mp.archived).forEach(mp => {
                 const nomNormalized = (mp.nom || '').toLowerCase().trim()
-                    .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Supprimer les accents
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                 
-                // Si on n'a pas encore cette MP par nom, ou si celle-ci a un stock plus récent
                 if (!mpParNom[nomNormalized]) {
                     mpParNom[nomNormalized] = mp;
                 }
@@ -11990,9 +12004,8 @@
                         
                         categories[cat.id].forEach(mp => {
                             const option = document.createElement('option');
-                            option.value = mp.nom; // Utiliser le NOM au lieu de l'ID
+                            option.value = mp.nom;
                             option.dataset.category = mp.categorie;
-                            // Afficher seulement le nom, pas le lot
                             const coutInfo = mp.cout ? ` (${mp.cout.toFixed(2)} €/kg)` : '';
                             option.textContent = `${mp.nom}${coutInfo}`;
                             optgroup.appendChild(option);
