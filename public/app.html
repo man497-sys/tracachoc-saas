@@ -1120,7 +1120,20 @@
         .photo-lightbox-content img.zoomed {
             max-width: none;
             max-height: none;
-            cursor: zoom-out;
+            cursor: grab;
+            transform-origin: 0 0;
+        }
+
+        .photo-lightbox-content img.zoomed:active {
+            cursor: grabbing;
+        }
+
+        .photo-lightbox-content {
+            max-width: 90%;
+            max-height: 80vh;
+            text-align: center;
+            overflow: hidden;
+            position: relative;
         }
 
         .photo-lightbox-nav {
@@ -3870,11 +3883,17 @@
                 <button class="photo-lightbox-btn" onclick="toggleZoom()" title="Zoom">
                     🔍 Zoom
                 </button>
+                <button class="photo-lightbox-btn" onclick="zoomImage(0.5)" title="Zoom +">
+                    ➕
+                </button>
+                <button class="photo-lightbox-btn" onclick="zoomImage(-0.5)" title="Zoom -">
+                    ➖
+                </button>
                 <button class="photo-lightbox-btn" onclick="downloadLightboxImage()" title="Télécharger">
                     💾 Télécharger
                 </button>
             </div>
-            <div class="photo-lightbox-zoom-hint">💡 Cliquez sur l'image pour zoomer • Utilisez ← → pour naviguer • Échap pour fermer</div>
+            <div class="photo-lightbox-zoom-hint">💡 Molette = zoom • Glisser = déplacer • Clic image = zoom x3 • ← → naviguer • Échap fermer</div>
         </div>
     </div>
 
@@ -15510,24 +15529,134 @@ Voulez-vous continuer ?`;
             updateLightboxImage();
         }
         
+        // === PHOTO VIEWER : Zoom + Pan (déplacement) ===
+        let viewerState = { scale: 1, panX: 0, panY: 0, isPanning: false, startX: 0, startY: 0 };
+        
         function toggleZoom() {
             const img = document.getElementById('lightbox-image');
-            img.classList.toggle('zoomed');
-            
-            // Maintenir la rotation lors du zoom
             const isZoomed = img.classList.contains('zoomed');
-            const scale = isZoomed ? 2 : 1;
-            img.style.transform = `rotate(${currentRotation}deg) scale(${scale})`;
+            
+            if (isZoomed) {
+                img.classList.remove('zoomed');
+                viewerState.scale = 1;
+                viewerState.panX = 0;
+                viewerState.panY = 0;
+                img.style.transform = `rotate(${currentRotation}deg)`;
+                img.style.cursor = 'zoom-in';
+            } else {
+                img.classList.add('zoomed');
+                viewerState.scale = 3;
+                viewerState.panX = 0;
+                viewerState.panY = 0;
+                updateImageTransform();
+                img.style.cursor = 'grab';
+            }
         }
+        
+        function updateImageTransform() {
+            const img = document.getElementById('lightbox-image');
+            img.style.transform = `rotate(${currentRotation}deg) scale(${viewerState.scale}) translate(${viewerState.panX}px, ${viewerState.panY}px)`;
+        }
+        
+        function zoomImage(delta) {
+            const img = document.getElementById('lightbox-image');
+            viewerState.scale = Math.max(1, Math.min(8, viewerState.scale + delta));
+            
+            if (viewerState.scale === 1) {
+                img.classList.remove('zoomed');
+                viewerState.panX = 0;
+                viewerState.panY = 0;
+                img.style.cursor = 'zoom-in';
+            } else {
+                img.classList.add('zoomed');
+                img.style.cursor = 'grab';
+            }
+            updateImageTransform();
+        }
+        
+        // Mouse wheel zoom
+        document.addEventListener('wheel', function(e) {
+            const lightbox = document.getElementById('photo-lightbox');
+            if (!lightbox.classList.contains('active')) return;
+            const img = document.getElementById('lightbox-image');
+            if (!img) return;
+            const rect = img.getBoundingClientRect();
+            if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                e.preventDefault();
+                zoomImage(e.deltaY < 0 ? 0.5 : -0.5);
+            }
+        }, { passive: false });
+        
+        // Pan with mouse drag
+        document.addEventListener('mousedown', function(e) {
+            const img = document.getElementById('lightbox-image');
+            if (!img || !img.classList.contains('zoomed') || e.target !== img) return;
+            viewerState.isPanning = true;
+            viewerState.startX = e.clientX - viewerState.panX;
+            viewerState.startY = e.clientY - viewerState.panY;
+            img.style.cursor = 'grabbing';
+            e.preventDefault();
+        });
+        
+        document.addEventListener('mousemove', function(e) {
+            if (!viewerState.isPanning) return;
+            viewerState.panX = e.clientX - viewerState.startX;
+            viewerState.panY = e.clientY - viewerState.startY;
+            updateImageTransform();
+        });
+        
+        document.addEventListener('mouseup', function() {
+            if (viewerState.isPanning) {
+                viewerState.isPanning = false;
+                const img = document.getElementById('lightbox-image');
+                if (img && img.classList.contains('zoomed')) img.style.cursor = 'grab';
+            }
+        });
+        
+        // Touch pan + pinch zoom (mobile)
+        let touchStartDist = 0;
+        document.addEventListener('touchstart', function(e) {
+            const img = document.getElementById('lightbox-image');
+            if (!img || e.target !== img) return;
+            if (e.touches.length === 1 && img.classList.contains('zoomed')) {
+                viewerState.isPanning = true;
+                viewerState.startX = e.touches[0].clientX - viewerState.panX;
+                viewerState.startY = e.touches[0].clientY - viewerState.panY;
+                e.preventDefault();
+            } else if (e.touches.length === 2) {
+                touchStartDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        document.addEventListener('touchmove', function(e) {
+            const img = document.getElementById('lightbox-image');
+            if (!img || e.target !== img) return;
+            if (e.touches.length === 1 && viewerState.isPanning) {
+                viewerState.panX = e.touches[0].clientX - viewerState.startX;
+                viewerState.panY = e.touches[0].clientY - viewerState.startY;
+                updateImageTransform();
+                e.preventDefault();
+            } else if (e.touches.length === 2) {
+                const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                zoomImage((dist - touchStartDist) * 0.01);
+                touchStartDist = dist;
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        document.addEventListener('touchend', function() { viewerState.isPanning = false; });
         
         function closeLightbox() {
             document.getElementById('photo-lightbox').classList.remove('active');
-            document.body.style.overflow = ''; // Restaurer le scroll
+            document.body.style.overflow = '';
             const img = document.getElementById('lightbox-image');
             img.classList.remove('zoomed');
             img.classList.remove('sharpened');
             img.style.transform = '';
+            img.style.cursor = 'zoom-in';
             currentRotation = 0;
+            viewerState = { scale: 1, panX: 0, panY: 0, isPanning: false, startX: 0, startY: 0 };
         }
         
         function closeLightboxOnBackground(event) {
