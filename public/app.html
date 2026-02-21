@@ -3384,7 +3384,7 @@
                 <div class="export-buttons">
                     <button class="btn btn-success" onclick="saveCompleteBackup()">💾 Sauvegarde Complète (Tous Modules)</button>
                     <button class="btn btn-secondary" onclick="loadBackupFile()">📂 Restaurer Sauvegarde</button>
-                    <button class="btn" onclick="generateSimpleReport()">📊 Rapport JSON Simple</button>
+                    <button class="btn" onclick="generateSimpleReport()">📊 Rapport PDF</button>
                     <button class="btn" onclick="exportData('csv')">📄 Export CSV (Lots)</button>
                 </div>
                 
@@ -14722,26 +14722,93 @@ Voulez-vous continuer ?`;
         }
 
         function generateSimpleReport() {
-            const reportData = {
-                title: 'Rapport Simple de Production',
-                date: new Date().toISOString(),
-                summary: {
-                    totalLots: lots.length,
-                    totalProduction: lots.reduce((sum, lot) => sum + getLotQuantiteKg(lot), 0),
-                    lotsTermines: lots.filter(l => l.statut === 'fini').length
-                },
-                lots: lots
-            };
-            
-            const reportStr = JSON.stringify(reportData, null, 2);
-            const reportBlob = new Blob([reportStr], { type: 'application/json' });
             const timestamp = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
             
-            if (downloadFile(reportBlob, `rapport_simple_${timestamp}.json`)) {
-                showAlert('Rapport généré avec succès !', 'success');
-            } else {
-                copyToClipboard(reportStr);
-            }
+            const totalLots = lots.length;
+            const totalProdKg = lots.reduce((sum, lot) => sum + getLotQuantiteKg(lot), 0);
+            const lotsTermines = lots.filter(l => l.statut === 'fini').length;
+            const lotsEnCours = lots.filter(l => l.statut === 'en_cours').length;
+            const totalMP = matieresPremières.filter(m => !m.archived).length;
+            const stockTotalKg = matieresPremières.filter(m => !m.archived).reduce((s, m) => s + (m.quantite_actuelle || m.quantiteActuelle || 0), 0);
+            const valeurStock = matieresPremières.filter(m => !m.archived).reduce((s, m) => {
+                const qty = m.quantite_actuelle || m.quantiteActuelle || 0;
+                return s + qty * (m.cout || 0);
+            }, 0);
+            const totalReceptions = receptions.length;
+            
+            const lotsByProduct = {};
+            lots.forEach(lot => {
+                const p = lot.produit || 'Autre';
+                if (!lotsByProduct[p]) lotsByProduct[p] = { count: 0, kg: 0 };
+                lotsByProduct[p].count++;
+                lotsByProduct[p].kg += getLotQuantiteKg(lot);
+            });
+            
+            const mpSorted = matieresPremières.filter(m => !m.archived).map(m => ({
+                nom: m.nom,
+                qty: m.quantite_actuelle || m.quantiteActuelle || 0,
+                cout: m.cout || 0,
+                valeur: (m.quantite_actuelle || m.quantiteActuelle || 0) * (m.cout || 0)
+            })).sort((a, b) => b.valeur - a.valeur).slice(0, 10);
+            
+            const productRows = Object.entries(lotsByProduct).sort((a, b) => b[1].kg - a[1].kg).map(([prod, data]) =>
+                `<tr><td style="padding:8px;border-bottom:1px solid #eee;">${prod}</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:center;">${data.count}</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:right;">${data.kg.toFixed(1)} kg</td></tr>`
+            ).join('');
+            
+            const mpRows = mpSorted.map(m =>
+                `<tr><td style="padding:8px;border-bottom:1px solid #eee;">${m.nom}</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:right;">${(m.qty * 1000).toFixed(0)} g</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:right;">${m.cout.toFixed(2)} €/kg</td><td style="padding:8px;border-bottom:1px solid #eee;text-align:right;font-weight:bold;">${m.valeur.toFixed(2)} €</td></tr>`
+            ).join('');
+            
+            const entreprise = generalSettings.entreprise || 'TRACACHOC';
+            
+            const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Rapport ${entreprise} - ${timestamp}</title>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 30px; color: #333; }
+                .header { text-align: center; border-bottom: 3px solid #8B4513; padding-bottom: 20px; margin-bottom: 30px; }
+                .header h1 { color: #8B4513; margin: 0; font-size: 28px; }
+                .header p { color: #666; margin: 5px 0; }
+                .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+                .card { background: #f8f9fa; border-radius: 10px; padding: 20px; text-align: center; border-top: 4px solid #8B4513; }
+                .card .num { font-size: 32px; font-weight: 800; color: #8B4513; }
+                .card .label { font-size: 13px; color: #666; margin-top: 5px; }
+                h2 { color: #8B4513; border-bottom: 2px solid #D2691E; padding-bottom: 8px; margin-top: 35px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                th { background: #8B4513; color: white; padding: 10px; text-align: left; }
+                .footer { margin-top: 40px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #ddd; padding-top: 15px; }
+                @media print { body { padding: 15px; } }
+            </style></head><body>
+            <div class="header">
+                <h1>🍫 ${entreprise}</h1>
+                <p style="font-size:20px;font-weight:700;color:#D2691E;">Rapport de Production & Stock</p>
+                <p>Généré le ${dateStr}</p>
+            </div>
+            <div class="cards">
+                <div class="card"><div class="num">${totalLots}</div><div class="label">Lots de production</div></div>
+                <div class="card"><div class="num">${totalProdKg.toFixed(1)} kg</div><div class="label">Production totale</div></div>
+                <div class="card"><div class="num">${stockTotalKg.toFixed(1)} kg</div><div class="label">Stock MP actuel</div></div>
+                <div class="card"><div class="num">${valeurStock.toFixed(0)} €</div><div class="label">Valeur du stock</div></div>
+            </div>
+            <div class="cards" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="card"><div class="num" style="color:#4caf50;">${lotsTermines}</div><div class="label">Lots terminés</div></div>
+                <div class="card"><div class="num" style="color:#ff9800;">${lotsEnCours}</div><div class="label">Lots en cours</div></div>
+                <div class="card"><div class="num" style="color:#2196f3;">${totalReceptions}</div><div class="label">Réceptions</div></div>
+            </div>
+            <h2>📦 Production par Produit</h2>
+            <table><thead><tr><th>Produit</th><th style="text-align:center;">Lots</th><th style="text-align:right;">Quantité</th></tr></thead><tbody>${productRows || '<tr><td colspan="3" style="padding:15px;text-align:center;color:#999;">Aucun lot</td></tr>'}</tbody></table>
+            <h2>🧪 Top 10 MP par Valeur de Stock</h2>
+            <table><thead><tr><th>Matière Première</th><th style="text-align:right;">Stock</th><th style="text-align:right;">Coût/kg</th><th style="text-align:right;">Valeur</th></tr></thead><tbody>${mpRows || '<tr><td colspan="4" style="padding:15px;text-align:center;color:#999;">Aucune MP</td></tr>'}</tbody></table>
+            <div class="footer">
+                <p>${entreprise} — Système de traçabilité TRACACHOC</p>
+                <p>Rapport généré automatiquement le ${now.toLocaleString('fr-FR')}</p>
+            </div></body></html>`;
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(html);
+            printWindow.document.close();
+            setTimeout(() => { printWindow.print(); }, 500);
+            showAlert('📊 Rapport PDF généré ! Utilisez "Enregistrer en PDF" dans la boîte d\'impression.', 'success');
         }
 
         // Réception de marchandises
