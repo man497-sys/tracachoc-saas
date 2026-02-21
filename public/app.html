@@ -2773,23 +2773,55 @@
                 <h3>🏢 Paramètres Généraux</h3>
                 
                 <div id="settings-form" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px solid #2196f3;">
+                    <h4 style="color: #1565c0; margin-top: 0;">🏢 Identité de l'entreprise</h4>
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="config-entreprise">Nom de l'Entreprise *</label>
                             <input type="text" id="config-entreprise" placeholder="Ex: Emotions Chocolats" style="background: linear-gradient(135deg, #fff 0%, #e3f2fd 100%); border: 2px solid #1976d2; font-weight: 600;">
                         </div>
-                        
                         <div class="form-group">
-                            <label for="config-stock-alerte">Seuil d'Alerte Stock (kg)</label>
+                            <label for="config-adresse">Adresse</label>
+                            <input type="text" id="config-adresse" placeholder="Ex: Rue Houmvent 4a, 4218 Couthuin" style="background: linear-gradient(135deg, #fff 0%, #e3f2fd 100%); border: 2px solid #1976d2;">
+                        </div>
+                        <div class="form-group">
+                            <label for="config-agrement">N° Agrément Sanitaire</label>
+                            <input type="text" id="config-agrement" placeholder="Ex: BE-WAL-0001" style="background: linear-gradient(135deg, #fff 0%, #e3f2fd 100%); border: 2px solid #1976d2;">
+                        </div>
+                        <div class="form-group">
+                            <label for="config-tva">N° TVA / Entreprise</label>
+                            <input type="text" id="config-tva" placeholder="Ex: BE0123.456.789" style="background: linear-gradient(135deg, #fff 0%, #e3f2fd 100%); border: 2px solid #1976d2;">
+                        </div>
+                    </div>
+                    <div class="form-grid" style="margin-top: 10px;">
+                        <div class="form-group">
+                            <label for="config-logo">Logo entreprise (URL ou base64)</label>
+                            <div style="display: flex; gap: 8px; align-items: start;">
+                                <input type="text" id="config-logo" placeholder="https://... ou cliquez Choisir" style="flex:1; background: linear-gradient(135deg, #fff 0%, #e3f2fd 100%); border: 2px solid #1976d2;">
+                                <button type="button" class="btn btn-small" onclick="document.getElementById('config-logo-file').click()" style="white-space: nowrap; padding: 10px 12px;">📁 Choisir</button>
+                                <input type="file" id="config-logo-file" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
+                            </div>
+                            <div id="config-logo-preview" style="margin-top: 8px;"></div>
+                        </div>
+                    </div>
+                    <h4 style="color: #1565c0; margin-top: 20px;">⚙️ Paramètres de production</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="config-lot-prefix">Préfixe numéro de lot</label>
+                            <input type="text" id="config-lot-prefix" placeholder="Ex: EC (donnera EC-2026-001)" maxlength="10" style="background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); border: 2px solid #ffc107; font-weight: 600;">
+                        </div>
+                        <div class="form-group">
+                            <label for="config-dlc-alerte">Alerte DLC (jours avant expiration)</label>
+                            <input type="number" id="config-dlc-alerte" placeholder="Ex: 30" min="1" max="365" style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border: 2px solid #f44336;">
+                        </div>
+                        <div class="form-group">
+                            <label for="config-stock-alerte">Seuil d'Alerte Stock global (kg)</label>
                             <input type="number" id="config-stock-alerte" placeholder="Ex: 20" min="0" step="0.1" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border: 2px solid #ff9800;">
                         </div>
                     </div>
-                    
                     <div style="margin-top: 15px; padding: 12px; background: #fff; border-radius: 8px; font-size: 13px; border-left: 4px solid #2196F3;">
-                        <strong>📦 Format des numéros de lot :</strong> ANNÉE-XXX (Ex: 2026-001, 2026-002...)
-                        <div style="margin-top: 5px; color: #666; font-size: 12px;">💡 Le compteur repart à 001 chaque nouvelle année</div>
+                        <strong>📦 Format des numéros de lot :</strong> <span id="lot-format-preview">ANNÉE-XXX</span> (Ex: <span id="lot-format-example">2026-001, 2026-002...</span>)
+                        <div style="margin-top: 5px; color: #666; font-size: 12px;">💡 Le compteur repart à 001 chaque nouvelle année. Le préfixe est optionnel.</div>
                     </div>
-                    
                     <div style="text-align: center; margin-top: 20px;">
                         <button type="button" class="btn" onclick="saveGeneralSettings()">💾 Enregistrer Paramètres</button>
                         <button type="button" class="btn btn-secondary" onclick="loadGeneralSettings()">🔄 Recharger</button>
@@ -7160,8 +7192,9 @@
             // Trouver tous les lots de l'année en cours
             const lotsThisYear = lots.filter(lot => {
                 if (!lot.numero) return false;
-                const lotYear = lot.numero.split('-')[0];
-                return parseInt(lotYear) === year;
+                const parts = lot.numero.split('-');
+                const yearPart = parts.length === 3 ? parts[1] : parts[0];
+                return parseInt(yearPart) === year;
             });
             
             // Trier par date de création (le plus récent en premier)
@@ -7176,18 +7209,18 @@
             if (lotsSorted.length > 0) {
                 const lastLot = lotsSorted[0];
                 const parts = lastLot.numero.split('-');
-                if (parts.length === 2) {
-                    const number = parseInt(parts[1]);
-                    if (!isNaN(number)) {
-                        lastNumber = number;
-                    }
+                const numStr = parts[parts.length - 1];
+                const number = parseInt(numStr);
+                if (!isNaN(number)) {
+                    lastNumber = number;
                 }
                 console.log(`📋 Dernier lot trouvé: ${lastLot.numero} (date: ${lastLot.date})`);
             }
             
             // Incrémenter
             const nextNumber = lastNumber + 1;
-            const lotNumber = `${year}-${String(nextNumber).padStart(3, '0')}`;
+            const prefix = generalSettings.lotPrefix ? `${generalSettings.lotPrefix}-` : '';
+            const lotNumber = `${prefix}${year}-${String(nextNumber).padStart(3, '0')}`;
             
             if (numeroLotInput) {
                 numeroLotInput.value = lotNumber;
@@ -13451,6 +13484,12 @@
         async function saveGeneralSettings() {
             const entreprise = document.getElementById('config-entreprise').value.trim();
             const stockAlerte = parseFloat(document.getElementById('config-stock-alerte').value) || 20;
+            const adresse = document.getElementById('config-adresse')?.value.trim() || '';
+            const agrement = document.getElementById('config-agrement')?.value.trim() || '';
+            const tva = document.getElementById('config-tva')?.value.trim() || '';
+            const logo = document.getElementById('config-logo')?.value.trim() || '';
+            const lotPrefix = document.getElementById('config-lot-prefix')?.value.trim() || '';
+            const dlcAlerte = parseInt(document.getElementById('config-dlc-alerte')?.value) || 30;
             
             if (!entreprise) {
                 showAlert('Veuillez remplir le nom de l\'entreprise', 'warning');
@@ -13459,18 +13498,50 @@
             
             generalSettings.entreprise = entreprise;
             generalSettings.stockAlerte = stockAlerte;
+            generalSettings.adresse = adresse;
+            generalSettings.agrement = agrement;
+            generalSettings.tva = tva;
+            generalSettings.logo = logo;
+            generalSettings.lotPrefix = lotPrefix;
+            generalSettings.dlcAlerte = dlcAlerte;
             
-            // Sauvegarder dans Supabase
             await saveGeneralSettingsConfig();
+            
+            const prefixDisplay = lotPrefix ? `${lotPrefix}-ANNÉE-XXX` : 'ANNÉE-XXX';
             
             showAlert(`✅ Paramètres enregistrés !
             
 🏢 Entreprise : ${entreprise}
-⚠️ Seuil d'alerte : ${stockAlerte} kg
-📦 Format lots : ANNÉE-XXX (Ex: 2025-203, 2025-204...)`, 'success');
+${adresse ? '📍 Adresse : ' + adresse : ''}
+📦 Format lots : ${prefixDisplay}
+⏰ Alerte DLC : ${dlcAlerte} jours`, 'success');
             
-            // Régénérer le numéro de lot
             generateLotNumber();
+        }
+        
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.size > 500000) {
+                showAlert('⚠️ Image trop lourde (max 500 Ko)', 'warning');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('config-logo').value = e.target.result;
+                updateLogoPreview(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function updateLogoPreview(src) {
+            const preview = document.getElementById('config-logo-preview');
+            if (!preview) return;
+            if (src) {
+                preview.innerHTML = `<img src="${src}" style="max-height: 60px; max-width: 200px; border-radius: 6px; border: 1px solid #ddd;" alt="Logo"> <button class="btn btn-small btn-danger" onclick="document.getElementById('config-logo').value='';document.getElementById('config-logo-preview').innerHTML='';" style="margin-left:8px;padding:4px 8px;">✕</button>`;
+            } else {
+                preview.innerHTML = '';
+            }
         }
         
         // ============================================
@@ -14008,6 +14079,22 @@ Beurre de Cacao;matieres-grasses;BDC-2025-01;Lipides SA;15.0;2025-01-14;2026-01-
         function loadGeneralSettings() {
             document.getElementById('config-entreprise').value = generalSettings.entreprise || 'Emotions Chocolats - Couthuin, Belgium';
             document.getElementById('config-stock-alerte').value = generalSettings.stockAlerte || 20;
+            
+            const adresseEl = document.getElementById('config-adresse');
+            if (adresseEl) adresseEl.value = generalSettings.adresse || '';
+            const agrementEl = document.getElementById('config-agrement');
+            if (agrementEl) agrementEl.value = generalSettings.agrement || '';
+            const tvaEl = document.getElementById('config-tva');
+            if (tvaEl) tvaEl.value = generalSettings.tva || '';
+            const logoEl = document.getElementById('config-logo');
+            if (logoEl) {
+                logoEl.value = generalSettings.logo || '';
+                updateLogoPreview(generalSettings.logo || '');
+            }
+            const lotPrefixEl = document.getElementById('config-lot-prefix');
+            if (lotPrefixEl) lotPrefixEl.value = generalSettings.lotPrefix || '';
+            const dlcAlerteEl = document.getElementById('config-dlc-alerte');
+            if (dlcAlerteEl) dlcAlerteEl.value = generalSettings.dlcAlerte || 30;
         }
 
         // Sauvegarder les paramètres généraux dans Supabase
