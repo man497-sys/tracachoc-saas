@@ -1551,6 +1551,37 @@
                 margin: 0;
             }
         }
+
+        /* Sections repliables */
+        .config-section-header {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            padding: 8px 0;
+        }
+        .config-section-header:hover { opacity: 0.8; }
+        .config-section-header .toggle-arrow {
+            display: inline-block;
+            width: 20px;
+            font-size: 14px;
+            transition: transform 0.2s ease;
+            color: #8B4513;
+            margin-right: 8px;
+        }
+        .config-section-header.collapsed .toggle-arrow {
+            transform: rotate(-90deg);
+        }
+        .config-section-body {
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+        }
+        .config-section-body.collapsed {
+            max-height: 0 !important;
+            overflow: hidden;
+            opacity: 0;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
     </style>
 </head>
 <body>
@@ -2746,7 +2777,11 @@
             </div>
             
             <div style="margin-bottom: 30px;">
-                <h3>📦 Gestion des Catégories de Matières Premières</h3>
+                <div id="header-categories" class="config-section-header collapsed" onclick="toggleConfigSection('categories')">
+                    <span class="toggle-arrow">▼</span>
+                    <h3 style="margin:0;">📦 Gestion des Catégories de Matières Premières</h3>
+                </div>
+                <div id="body-categories" class="config-section-body collapsed">
                 
                 <div id="categorie-form" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px solid #ff9800;">
                     <h4 style="color: #e65100;">Ajouter/Modifier une Catégorie</h4>
@@ -2797,8 +2832,13 @@
                 </div>
             </div>
             
+            </div>
             <div style="margin-bottom: 30px;">
-                <h3>🍫 Gestion des Produits</h3>
+                <div id="header-products" class="config-section-header collapsed" onclick="toggleConfigSection('products')">
+                    <span class="toggle-arrow">▼</span>
+                    <h3 style="margin:0;">🍫 Gestion des Produits</h3>
+                </div>
+                <div id="body-products" class="config-section-body collapsed">
                 
                 <div id="produit-form" style="background: linear-gradient(135deg, #efebe9 0%, #d7ccc8 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px solid #8d6e63;">
                     <h4 style="color: #5d4037;">Ajouter/Modifier un Produit</h4>
@@ -2933,8 +2973,13 @@
                 </div>
             </div>
 
+            </div>
             <div style="margin-bottom: 30px;">
-                <h3>🧄 Gestion des Matières Premières Référencées</h3>
+                <div id="header-mpref" class="config-section-header collapsed" onclick="toggleConfigSection('mpref')">
+                    <span class="toggle-arrow">▼</span>
+                    <h3 style="margin:0;">🧄 Gestion des Matières Premières Référencées</h3>
+                </div>
+                <div id="body-mpref" class="config-section-body collapsed">
                 
                 <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 15px; border-radius: 12px; margin-bottom: 20px; border-left: 5px solid #4caf50;">
                     <strong style="color: #2e7d32;">💡 Créez ici votre liste de matières premières.</strong>
@@ -3028,9 +3073,14 @@
 
             </div>
 
+            </div>
             <!-- Configuration des Étiquettes -->
             <div style="margin-bottom: 30px;">
-                <h3>🏷️ Configuration des Étiquettes</h3>
+                <div id="header-labels" class="config-section-header collapsed" onclick="toggleConfigSection('labels')">
+                    <span class="toggle-arrow">▼</span>
+                    <h3 style="margin:0;">🏷️ Configuration des Étiquettes</h3>
+                </div>
+                <div id="body-labels" class="config-section-body collapsed">
                 
                 <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 15px; border-radius: 12px; margin-bottom: 20px; border-left: 5px solid #ff9800;">
                     <strong style="color: #e65100;">💡 Configurez vos formats d'étiquettes personnalisés.</strong>
@@ -5496,6 +5546,15 @@
                     element.addEventListener('change', applyReceptionFilters);
                 }
             });
+        }
+
+        // Toggle sections repliables
+        function toggleConfigSection(sectionId) {
+            const header = document.getElementById('header-' + sectionId);
+            const body = document.getElementById('body-' + sectionId);
+            if (!header || !body) return;
+            header.classList.toggle('collapsed');
+            body.classList.toggle('collapsed');
         }
 
         // Gestion des onglets
