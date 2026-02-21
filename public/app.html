@@ -2126,13 +2126,7 @@
                 <!-- Les alertes de stock seront affichées ici -->
             </div>
             
-            <div style="margin-bottom: 15px;">
-                <div id="header-inv-stats" class="config-section-header" onclick="toggleConfigSection('inv-stats')">
-                    <span class="toggle-arrow">▼</span>
-                    <h3 style="margin:0; font-size: 16px;">📊 Résumé du stock</h3>
-                </div>
-                <div id="body-inv-stats" class="config-section-body">
-                    <div class="summary-cards">
+            <div class="summary-cards">
                         <div class="summary-card">
                             <div class="summary-number" id="inventaire-total-mp">0</div>
                             <div class="summary-label">Matières Premières</div>
@@ -2149,16 +2143,8 @@
                             <div class="summary-number" id="inventaire-alertes">0</div>
                             <div class="summary-label">Alertes Stock</div>
                         </div>
-                    </div>
-                </div>
             </div>
             
-            <div style="margin-bottom: 15px;">
-                <div id="header-inv-filters" class="config-section-header" onclick="toggleConfigSection('inv-filters')">
-                    <span class="toggle-arrow">▼</span>
-                    <h3 style="margin:0; font-size: 16px;">🔍 Filtres & Actions</h3>
-                </div>
-                <div id="body-inv-filters" class="config-section-body">
             <div class="search-filters" style="margin-bottom: 20px;">
                 <input type="text" class="search-bar" id="search-inventaire" placeholder="🔍 Rechercher par nom, lot, fournisseur...">
                 
@@ -2201,9 +2187,13 @@
                     <button class="btn btn-secondary" onclick="reloadLossesFromSupabase()" style="background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);">🔄 Recharger Pertes</button>
                 </div>
             </div>
-                </div>
-            </div>
             
+            <div style="margin-bottom: 15px;">
+                <div id="header-inv-table" class="config-section-header" onclick="toggleConfigSection('inv-table')">
+                    <span class="toggle-arrow">▼</span>
+                    <h3 style="margin:0; font-size: 16px;">📋 Détail du stock</h3>
+                </div>
+                <div id="body-inv-table" class="config-section-body">
             <div class="table-responsive">
                 <table class="data-table" id="inventaire-table">
                     <thead>
