@@ -2126,25 +2126,39 @@
                 <!-- Les alertes de stock seront affichées ici -->
             </div>
             
-            <div class="summary-cards">
-                <div class="summary-card">
-                    <div class="summary-number" id="inventaire-total-mp">0</div>
-                    <div class="summary-label">Matières Premières</div>
+            <div style="margin-bottom: 15px;">
+                <div id="header-inv-stats" class="config-section-header" onclick="toggleConfigSection('inv-stats')">
+                    <span class="toggle-arrow">▼</span>
+                    <h3 style="margin:0; font-size: 16px;">📊 Résumé du stock</h3>
                 </div>
-                <div class="summary-card">
-                    <div class="summary-number" id="inventaire-stock-total">0</div>
-                    <div class="summary-label">Stock Total (kg)</div>
-                </div>
-                <div class="summary-card">
-                    <div class="summary-number" id="inventaire-valeur-totale">0</div>
-                    <div class="summary-label">Valeur Totale (€)</div>
-                </div>
-                <div class="summary-card">
-                    <div class="summary-number" id="inventaire-alertes">0</div>
-                    <div class="summary-label">Alertes Stock</div>
+                <div id="body-inv-stats" class="config-section-body">
+                    <div class="summary-cards">
+                        <div class="summary-card">
+                            <div class="summary-number" id="inventaire-total-mp">0</div>
+                            <div class="summary-label">Matières Premières</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-number" id="inventaire-stock-total">0</div>
+                            <div class="summary-label">Stock Total (kg)</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-number" id="inventaire-valeur-totale">0</div>
+                            <div class="summary-label">Valeur Totale (€)</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-number" id="inventaire-alertes">0</div>
+                            <div class="summary-label">Alertes Stock</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
+            <div style="margin-bottom: 15px;">
+                <div id="header-inv-filters" class="config-section-header" onclick="toggleConfigSection('inv-filters')">
+                    <span class="toggle-arrow">▼</span>
+                    <h3 style="margin:0; font-size: 16px;">🔍 Filtres & Actions</h3>
+                </div>
+                <div id="body-inv-filters" class="config-section-body">
             <div class="search-filters" style="margin-bottom: 20px;">
                 <input type="text" class="search-bar" id="search-inventaire" placeholder="🔍 Rechercher par nom, lot, fournisseur...">
                 
@@ -2185,6 +2199,8 @@
                     <button class="btn btn-success" onclick="printInventaire()">🖨️ Imprimer Inventaire</button>
                     <button class="btn btn-danger" onclick="showLossesHistory()">⚠️ Historique des Pertes</button>
                     <button class="btn btn-secondary" onclick="reloadLossesFromSupabase()" style="background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);">🔄 Recharger Pertes</button>
+                </div>
+            </div>
                 </div>
             </div>
             
