@@ -14987,6 +14987,49 @@ Voulez-vous continuer ?`;
             }
         }
         
+        function editReceptionItem(index) {
+            if (index < 0 || index >= currentReceptionItems.length) return;
+            const item = currentReceptionItems[index];
+            
+            const nomSelect = document.getElementById('reception-mp-nom-select');
+            const nomInput = document.getElementById('reception-mp-nom');
+            if (nomSelect) {
+                const option = Array.from(nomSelect.options).find(o => o.value === item.mpNom);
+                if (option) {
+                    nomSelect.value = item.mpNom;
+                    nomInput.style.display = 'none';
+                    nomInput.value = item.mpNom;
+                } else {
+                    nomSelect.value = '__custom__';
+                    nomInput.style.display = 'block';
+                    nomInput.value = item.mpNom;
+                }
+            }
+            
+            const catSelect = document.getElementById('reception-mp-categorie');
+            if (catSelect) catSelect.value = item.categorie;
+            
+            document.getElementById('reception-mp-lot').value = item.lot || '';
+            document.getElementById('reception-mp-fournisseur').value = item.fournisseur || '';
+            document.getElementById('reception-mp-date-reception').value = item.dateReception || '';
+            document.getElementById('reception-mp-dlc').value = item.dlc || '';
+            document.getElementById('reception-mp-quantite').value = item.quantite ? (item.quantite * 1000).toFixed(0) : '';
+            
+            const prixInput = document.getElementById('reception-mp-prix');
+            if (prixInput) prixInput.value = item.prix || '';
+            
+            const stockMiniInput = document.getElementById('reception-mp-stock-mini');
+            if (stockMiniInput) stockMiniInput.value = item.stockMini ? (item.stockMini * 1000).toFixed(0) : '';
+            
+            currentReceptionItems.splice(index, 1);
+            updateReceptionItemsDisplay();
+            
+            const form = document.getElementById('reception-mp-nom-select') || document.getElementById('reception-mp-nom');
+            if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            showAlert(`✏️ Modification de "${item.mpNom}" — corrigez les champs puis cliquez sur "Ajouter"`, 'info');
+        }
+        
         function updateReceptionItemsDisplay() {
             const listDiv = document.getElementById('reception-items-list');
             const emptyMsg = document.getElementById('reception-items-empty');
@@ -15034,6 +15077,7 @@ Voulez-vous continuer ?`;
                                 </div>
                                 <span class="lot-status" style="font-size: 11px; padding: 4px 8px; background: #e3f2fd; color: #1976d2; border-radius: 4px;">${categorieLabel}</span>
                             </div>
+                            <button class="btn btn-small" onclick="editReceptionItem(${index})" style="padding: 6px 12px; background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);" title="Modifier">✏️</button>
                             <button class="btn btn-small btn-danger" onclick="removeReceptionItem(${index})" style="padding: 6px 12px;">🗑️</button>
                         </div>
                         
