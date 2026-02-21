@@ -10109,20 +10109,22 @@
         }
         
         function updateInventaireStats() {
-            const totalMP = matieresPremières.length;
-            const stockTotal = matieresPremières.reduce((sum, mp) => {
+            // Exclure les MP archivées pour les stats
+            const activeMP = matieresPremières.filter(mp => !mp.archived);
+            const totalMP = activeMP.length;
+            const stockTotal = activeMP.reduce((sum, mp) => {
                 const qty = mp.quantite_actuelle || mp.quantiteActuelle || 0;
                 return sum + qty;
             }, 0);
-            const valeurTotale = matieresPremières.reduce((sum, mp) => {
+            const valeurTotale = activeMP.reduce((sum, mp) => {
                 const qty = mp.quantite_actuelle || mp.quantiteActuelle || 0;
                 const cout = mp.cout || 0;
                 return sum + (qty * cout);
             }, 0);
-            const alertes = matieresPremières.filter(mp => {
+            const alertes = activeMP.filter(mp => {
                 const qty = mp.quantite_actuelle || mp.quantiteActuelle || 0;
                 const mini = mp.stock_mini || mp.stockMini || 0;
-                return qty <= mini;
+                return mini > 0 && qty <= mini;
             }).length;
             
             document.getElementById('inventaire-total-mp').textContent = totalMP;
