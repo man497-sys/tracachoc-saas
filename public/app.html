@@ -3027,6 +3027,71 @@
             </div>
 
             </div>
+
+            <!-- Configuration des Étiquettes -->
+            <div style="margin-bottom: 30px;">
+                <h3>🏷️ Configuration des Étiquettes</h3>
+                
+                <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 15px; border-radius: 12px; margin-bottom: 20px; border-left: 5px solid #ff9800;">
+                    <strong style="color: #e65100;">💡 Configurez vos formats d'étiquettes personnalisés.</strong>
+                    <div style="margin-top: 5px; color: #bf360c; font-size: 14px;">
+                        Ajoutez les dimensions correspondant à votre imprimante. Seuls les formats activés apparaîtront dans le sélecteur d'étiquettes.
+                    </div>
+                </div>
+
+                <!-- Format par défaut -->
+                <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 2px solid #ff9800;">
+                    <h4 style="margin-top:0; color: #e65100;">📏 Format par défaut</h4>
+                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <select id="config-label-default" style="padding: 10px; border: 2px solid #ff9800; border-radius: 8px; font-size: 14px; min-width: 300px;">
+                            <!-- Rempli dynamiquement -->
+                        </select>
+                        <button type="button" class="btn" onclick="saveDefaultLabelSize()" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);">💾 Définir par défaut</button>
+                    </div>
+                </div>
+
+                <!-- Ajouter un format personnalisé -->
+                <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 2px solid #ff9800;">
+                    <h4 style="margin-top:0; color: #e65100;">➕ Ajouter un format personnalisé</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+                        <div class="form-group">
+                            <label>Nom du format *</label>
+                            <input type="text" id="config-label-name" placeholder="Ex: Mon imprimante 80x50" style="border: 2px solid #ff9800;">
+                        </div>
+                        <div class="form-group">
+                            <label>Largeur (mm) *</label>
+                            <input type="number" id="config-label-width" placeholder="Ex: 80" min="20" max="300" style="border: 2px solid #ff9800;">
+                        </div>
+                        <div class="form-group">
+                            <label>Hauteur min (mm) *</label>
+                            <input type="number" id="config-label-height" placeholder="Ex: 50" min="10" max="300" style="border: 2px solid #ff9800;">
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <button type="button" class="btn" onclick="addCustomLabelSize()" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);">➕ Ajouter ce format</button>
+                    </div>
+                </div>
+
+                <!-- Liste des formats personnalisés -->
+                <div style="background: white; padding: 20px; border-radius: 12px; border: 2px solid #ff9800;">
+                    <h4 style="margin-top:0; color: #e65100;">📋 Formats personnalisés (<span id="custom-label-count">0</span>)</h4>
+                    <table class="table-styled" id="custom-label-table">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Largeur</th>
+                                <th>Hauteur</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Rempli dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            </div>
         </div>
 
         <!-- Recettes -->
@@ -3791,33 +3856,10 @@
                 <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 20px; border-radius: 12px; margin: 20px 0; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                     <label style="font-weight: 700; font-size: 16px; margin-right: 15px; color: #333;">📏 Format d'étiquette :</label>
                     <select id="label-size-select" onchange="changeLabelSize()" style="padding: 12px 20px; border: 2px solid #D2691E; border-radius: 8px; font-size: 15px; cursor: pointer; min-width: 300px; font-weight: 600;">
-                        <optgroup label="Formats Standard" style="font-weight: 700;">
-                            <option value="a5">A5 - Standard (148 × 210 mm)</option>
-                            <option value="a6">A6 - Compact (105 × 148 mm)</option>
-                            <option value="a4">A4 - Grande (210 × 297 mm)</option>
-                        </optgroup>
-                        <optgroup label="Étiquettes Autocollantes" style="font-weight: 700;">
-                            <option value="label-small">Étiquette Petite (70 × 100 mm)</option>
-                            <option value="label-medium">Étiquette Moyenne (100 × 150 mm)</option>
-                            <option value="label-large">Étiquette Grande (150 × 200 mm)</option>
-                        </optgroup>
-                        <optgroup label="Brother TD-4550 (Imprimante Thermique)" style="font-weight: 700;">
-                            <option value="brother-102x152">Brother 102×152mm (4" × 6") - Standard Grande</option>
-                            <option value="brother-102x127">Brother 102×127mm (4" × 5") - Grande</option>
-                            <option value="brother-102x102">Brother 102×102mm (4" × 4") - Carrée Grande</option>
-                            <option value="brother-102x76">Brother 102×76mm (4" × 3") - Moyenne</option>
-                            <option value="brother-102x51">Brother 102×51mm (4" × 2") - Compacte</option>
-                            <option value="brother-102x38">Brother 102×38mm (4" × 1.5") - Petite Large</option>
-                            <option value="brother-102x25">Brother 102×25mm (4" × 1") - Bandeau</option>
-                            <option value="brother-62x100">Brother 62×100mm (2.4" × 4") - Standard Étroite</option>
-                            <option value="brother-62x51">Brother 62×51mm (2.4" × 2") - Carrée Étroite</option>
-                            <option value="brother-62x29">Brother 62×29mm (2.4" × 1.1") - Mini</option>
-                            <option value="brother-50x23" selected>Brother 50×23mm (2" × 0.9") - Très Petite ⭐</option>
-                            <option value="brother-50x23">Brother 50×23mm (2" × 0.9") - Ultra Compact</option>
-                        </optgroup>
+                        <!-- Rempli dynamiquement par updateLabelSizeSelects() -->
                     </select>
                     <div style="margin-top: 12px; font-size: 13px; color: #666; background: white; padding: 10px; border-radius: 6px; border: 1px solid #ddd;">
-                        💡 <strong>Astuce :</strong> Changez le format pour voir l'aperçu en temps réel
+                        💡 <strong>Astuce :</strong> Ajoutez vos propres formats dans <strong>Configuration → 🏷️ Étiquettes</strong>
                     </div>
                 </div>
                 
@@ -4369,6 +4411,7 @@
         let filteredReceptions = [];
         let productsConfig = [];
         let mpRefConfig = [];
+        let labelConfig = { defaultSize: 'a5', customFormats: [] };
         let recipesConfig = []; // Nouveau : recettes de production
         let generalSettings = {};
         let currentPhotos = [];
@@ -4805,6 +4848,7 @@
                         else if (config.type === 'categories') categoriesMP = config.data || categoriesMP;
                         else if (config.type === 'recipes') recipesConfig = config.data || [];
                         else if (config.type === 'mp_references') mpRefConfig = config.data || [];
+                        else if (config.type === 'label_config') labelConfig = config.data || { defaultSize: 'a5', customFormats: [] };
                     });
                     console.log('✅ Configuration chargée');
                 } else {
@@ -4828,6 +4872,8 @@
                 updateRecipeIngredientSelect();
                 renderMPRefTable();
                 updateMPRefSelects();
+                renderCustomLabelTable();
+                updateLabelSizeSelects();
                 
                 // Initialiser les listes filtrées AVANT l'affichage
                 filteredLots = [...lots];
@@ -7872,25 +7918,8 @@
             clonedContent.className = 'label-printable ' + sizeClass;
             
             // Noms des formats pour l'affichage
-            const sizeNames = {
-                'a5': 'A5 (148×210mm)',
-                'a6': 'A6 (105×148mm)',
-                'a4': 'A4 (210×297mm)',
-                'label-small': 'Petite (70×100mm)',
-                'label-medium': 'Moyenne (100×150mm)',
-                'label-large': 'Grande (150×200mm)',
-                'brother-102x152': 'Brother 102×152mm (4"×6") Standard Grande',
-                'brother-102x127': 'Brother 102×127mm (4"×5") Grande',
-                'brother-102x102': 'Brother 102×102mm (4"×4") Carrée Grande',
-                'brother-102x76': 'Brother 102×76mm (4"×3") Moyenne',
-                'brother-102x51': 'Brother 102×51mm (4"×2") Compacte',
-                'brother-102x38': 'Brother 102×38mm (4"×1.5") Petite Large',
-                'brother-102x25': 'Brother 102×25mm (4"×1") Bandeau',
-                'brother-62x100': 'Brother 62×100mm (2.4"×4") Standard Étroite',
-                'brother-62x51': 'Brother 62×51mm (2.4"×2") Carrée Étroite',
-                'brother-62x29': 'Brother 62×29mm (2.4"×1.1") Mini',
-                'brother-50x23': 'Brother 50×23mm (2"×0.9") Ultra Compact'
-            };
+            const sizeNames = {};
+            getAllLabelFormats().forEach(f => { sizeNames[f.id] = f.name; });
             
             // Créer le document HTML complet
             const htmlContent = `
@@ -8030,25 +8059,8 @@
             }, 150);
             
             // Message visuel discret
-            const sizeNames = {
-                'a5': 'A5 - Standard',
-                'a6': 'A6 - Compact',
-                'a4': 'A4 - Grande',
-                'label-small': 'Petite',
-                'label-medium': 'Moyenne',
-                'label-large': 'Grande',
-                'brother-102x152': 'Brother 102×152mm',
-                'brother-102x127': 'Brother 102×127mm',
-                'brother-102x102': 'Brother 102×102mm',
-                'brother-102x76': 'Brother 102×76mm',
-                'brother-102x51': 'Brother 102×51mm',
-                'brother-102x38': 'Brother 102×38mm',
-                'brother-102x25': 'Brother 102×25mm',
-                'brother-62x100': 'Brother 62×100mm',
-                'brother-62x51': 'Brother 62×51mm',
-                'brother-62x29': 'Brother 62×29mm',
-                'brother-50x23': 'Brother 50×23mm'
-            };
+            const sizeNames = {};
+            getAllLabelFormats().forEach(f => { sizeNames[f.id] = f.name; });
             
             console.log(`Format d'étiquette changé : ${sizeNames[selectedSize] || selectedSize}`);
         }
@@ -11695,6 +11707,180 @@
             renderMPRefTable();
             updateMPRefSelects();
             showAlert('✅ MP supprimée de la liste', 'success');
+        }
+        
+        // ============================================
+        // CONFIGURATION DES ÉTIQUETTES
+        // ============================================
+        
+        const builtInLabelFormats = [
+            { id: 'a4', name: 'A4 (210 × 297 mm)', width: 210, height: 297, group: 'Formats Standard' },
+            { id: 'a5', name: 'A5 (148 × 210 mm)', width: 148, height: 210, group: 'Formats Standard' },
+            { id: 'a6', name: 'A6 (105 × 148 mm)', width: 105, height: 148, group: 'Formats Standard' },
+            { id: 'label-small', name: 'Étiquette Petite (70 × 100 mm)', width: 70, height: 100, group: 'Étiquettes Autocollantes' },
+            { id: 'label-medium', name: 'Étiquette Moyenne (100 × 150 mm)', width: 100, height: 150, group: 'Étiquettes Autocollantes' },
+            { id: 'label-large', name: 'Étiquette Grande (150 × 200 mm)', width: 150, height: 200, group: 'Étiquettes Autocollantes' }
+        ];
+        
+        function getAllLabelFormats() {
+            const customs = (labelConfig.customFormats || []).map(f => ({
+                ...f,
+                id: 'custom-' + f.width + 'x' + f.height + '-' + f.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase(),
+                group: 'Formats Personnalisés'
+            }));
+            return [...builtInLabelFormats, ...customs];
+        }
+        
+        function renderCustomLabelTable() {
+            const tbody = document.querySelector('#custom-label-table tbody');
+            if (!tbody) return;
+            const formats = labelConfig.customFormats || [];
+            document.getElementById('custom-label-count').textContent = formats.length;
+            
+            if (formats.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#999; padding:20px;">Aucun format personnalisé. Ajoutez-en ci-dessus.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = formats.map((f, i) => `
+                <tr>
+                    <td><strong>${f.name}</strong></td>
+                    <td>${f.width} mm</td>
+                    <td>${f.height} mm</td>
+                    <td>
+                        <button class="btn btn-danger" onclick="deleteCustomLabelSize(${i})" style="font-size: 12px; padding: 5px 10px;">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        function updateLabelSizeSelects() {
+            const formats = getAllLabelFormats();
+            const defaultSelect = document.getElementById('config-label-default');
+            const labelSelect = document.getElementById('label-size-select');
+            
+            // Update config default select
+            if (defaultSelect) {
+                defaultSelect.innerHTML = '';
+                const groups = {};
+                formats.forEach(f => {
+                    if (!groups[f.group]) groups[f.group] = [];
+                    groups[f.group].push(f);
+                });
+                Object.keys(groups).forEach(g => {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = g;
+                    groups[g].forEach(f => {
+                        const opt = document.createElement('option');
+                        opt.value = f.id;
+                        opt.textContent = f.name;
+                        if (f.id === labelConfig.defaultSize) opt.selected = true;
+                        optgroup.appendChild(opt);
+                    });
+                    defaultSelect.appendChild(optgroup);
+                });
+            }
+            
+            // Update the label size select in the Étiquettes tab
+            if (labelSelect) {
+                const currentVal = labelSelect.value;
+                labelSelect.innerHTML = '';
+                const groups = {};
+                formats.forEach(f => {
+                    if (!groups[f.group]) groups[f.group] = [];
+                    groups[f.group].push(f);
+                });
+                Object.keys(groups).forEach(g => {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = g;
+                    optgroup.style.fontWeight = '700';
+                    groups[g].forEach(f => {
+                        const opt = document.createElement('option');
+                        opt.value = f.id;
+                        opt.textContent = f.name;
+                        if (f.id === (currentVal || labelConfig.defaultSize)) opt.selected = true;
+                        optgroup.appendChild(opt);
+                    });
+                    labelSelect.appendChild(optgroup);
+                });
+                // Inject dynamic CSS for custom formats
+                injectCustomLabelCSS();
+            }
+        }
+        
+        function injectCustomLabelCSS() {
+            let style = document.getElementById('custom-label-styles');
+            if (!style) {
+                style = document.createElement('style');
+                style.id = 'custom-label-styles';
+                document.head.appendChild(style);
+            }
+            const customs = labelConfig.customFormats || [];
+            style.textContent = customs.map(f => {
+                const id = 'custom-' + f.width + 'x' + f.height + '-' + f.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                return `.label-size-${id} { width: ${f.width}mm; max-width: ${f.width}mm; min-height: ${f.height}mm; padding: ${f.width < 70 ? '6' : '12'}px; }`;
+            }).join('\n');
+        }
+        
+        function addCustomLabelSize() {
+            const name = document.getElementById('config-label-name').value.trim();
+            const width = parseInt(document.getElementById('config-label-width').value);
+            const height = parseInt(document.getElementById('config-label-height').value);
+            
+            if (!name) { showAlert('❌ Le nom est obligatoire', 'danger'); return; }
+            if (!width || width < 20 || width > 300) { showAlert('❌ Largeur invalide (20-300mm)', 'danger'); return; }
+            if (!height || height < 10 || height > 300) { showAlert('❌ Hauteur invalide (10-300mm)', 'danger'); return; }
+            
+            if (!labelConfig.customFormats) labelConfig.customFormats = [];
+            
+            // Vérifier doublon
+            const exists = labelConfig.customFormats.find(f => f.name.toLowerCase() === name.toLowerCase());
+            if (exists) { showAlert('❌ Un format avec ce nom existe déjà', 'danger'); return; }
+            
+            labelConfig.customFormats.push({ name, width, height });
+            saveLabelConfig();
+            renderCustomLabelTable();
+            updateLabelSizeSelects();
+            
+            document.getElementById('config-label-name').value = '';
+            document.getElementById('config-label-width').value = '';
+            document.getElementById('config-label-height').value = '';
+            
+            showAlert(`✅ Format "${name}" (${width}×${height}mm) ajouté`, 'success');
+        }
+        
+        function deleteCustomLabelSize(index) {
+            if (!confirm('Supprimer ce format ?')) return;
+            labelConfig.customFormats.splice(index, 1);
+            saveLabelConfig();
+            renderCustomLabelTable();
+            updateLabelSizeSelects();
+            showAlert('✅ Format supprimé', 'success');
+        }
+        
+        function saveDefaultLabelSize() {
+            const select = document.getElementById('config-label-default');
+            if (!select) return;
+            labelConfig.defaultSize = select.value;
+            saveLabelConfig();
+            updateLabelSizeSelects();
+            showAlert('✅ Format par défaut enregistré', 'success');
+        }
+        
+        async function saveLabelConfig() {
+            try {
+                const { error } = await supabaseClient
+                    .from('configuration')
+                    .upsert({
+                        user_id: currentUser.id,
+                        type: 'label_config',
+                        data: labelConfig,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id,type' });
+                if (error) console.error('Erreur sauvegarde label config:', error);
+            } catch (e) {
+                console.error('Erreur:', e);
+            }
         }
         
         function importMPFromStock() {
