@@ -10453,17 +10453,21 @@
         }
         
         async function saveCustomProducts() {
-            if (isOnline && supabaseClient) {
+            if (isOnline && supabaseClient && currentUser) {
                 try {
-                    const { data: existing } = await supabaseClient.from('configuration')
-                        .select('id').eq('user_id', currentUser.id).eq('type', 'custom_products').single();
+                    const { data: existing, error: searchError } = await supabaseClient.from('configuration')
+                        .select('id').eq('user_id', currentUser.id).eq('type', 'custom_products').maybeSingle();
                     const configData = { user_id: currentUser.id, type: 'custom_products', data: customProducts };
-                    if (existing) {
-                        await supabaseClient.from('configuration').update({ data: customProducts }).eq('id', existing.id);
+                    if (existing && existing.id) {
+                        const { error } = await supabaseClient.from('configuration').update({ data: customProducts }).eq('id', existing.id);
+                        if (error) throw error;
+                        console.log('✅ Custom products mis à jour dans Supabase');
                     } else {
-                        await supabaseClient.from('configuration').insert(configData);
+                        const { error } = await supabaseClient.from('configuration').insert(configData);
+                        if (error) throw error;
+                        console.log('✅ Custom products créés dans Supabase');
                     }
-                } catch(e) { console.error('Erreur sauvegarde custom products:', e); }
+                } catch(e) { console.error('❌ Erreur sauvegarde custom products:', e); }
             }
             saveToLocalStorage();
         }
