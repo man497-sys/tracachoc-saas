@@ -4602,6 +4602,7 @@
         // Variables globales
         let lots = [];
         let matieresPremières = [];
+        let customProducts = [];
         let filteredMatieresPremières = [];
         let controlesQualite = [];
         let receptions = [];
@@ -4943,7 +4944,7 @@
                 
                 // Traiter les résultats
                 if (lotsResult.error) throw new Error(`Lots: ${lotsResult.error.message}`);
-                lots = lotsResult.data || [];
+                lots = (lotsResult.data || []).filter(l => !l.isCustomProduct);
                 console.log('✅ Lots chargés:', lots.length);
                 
                 // Correction auto: lots stockés en grammes avec unite 'kg'
@@ -5047,6 +5048,7 @@
                         else if (config.type === 'categories') categoriesMP = config.data || categoriesMP;
                         else if (config.type === 'recipes') recipesConfig = config.data || [];
                         else if (config.type === 'mp_references') mpRefConfig = config.data || [];
+                        else if (config.type === 'custom_products') customProducts = config.data || [];
                         else if (config.type === 'label_config') labelConfig = config.data || { defaultSize: 'a5', customFormats: [] };
                     });
                     console.log('✅ Configuration chargée');
@@ -10282,13 +10284,19 @@
             document.getElementById('inventaire-valeur-totale').textContent = valeurTotale.toFixed(2);
             document.getElementById('inventaire-alertes').textContent = alertes;
             
-            // Produits finis en stock
-            const pfEnStock = lots.filter(l => l.statut === 'fini' && !l.vendu);
-            const pfTotalQty = pfEnStock.reduce((sum, l) => sum + getLotQuantiteKg(l), 0);
-            const pfTotalValeur = pfEnStock.reduce((sum, l) => sum + (l.cout || 0), 0);
+            // Produits finis en stock (lots finis non vendus + custom products)
+            const pfLots = lots.filter(l => l.statut === 'fini' && !l.vendu && !l.isCustomProduct);
+            const pfCustom = customProducts.filter(p => !p.vendu);
+            const pfLotsQty = pfLots.reduce((sum, l) => sum + getLotQuantiteKg(l), 0);
+            const pfLotsValeur = pfLots.reduce((sum, l) => sum + (l.cout || 0), 0);
+            const pfCustomQty = pfCustom.reduce((sum, p) => sum + (p.quantiteKg || 0), 0);
+            const pfCustomValeur = pfCustom.reduce((sum, p) => sum + (p.cout || 0), 0);
+            const pfTotalQty = pfLotsQty + pfCustomQty;
+            const pfTotalValeur = pfLotsValeur + pfCustomValeur;
+            const pfTotalCount = pfLots.length + pfCustom.length;
             
             const pfCountEl = document.getElementById('inv-pf-count');
-            if (pfCountEl) pfCountEl.textContent = pfEnStock.length;
+            if (pfCountEl) pfCountEl.textContent = pfTotalCount;
             const pfQtyEl = document.getElementById('inv-pf-qty');
             if (pfQtyEl) pfQtyEl.textContent = pfTotalQty.toFixed(1);
             const pfValeurEl = document.getElementById('inv-pf-valeur');
@@ -10296,10 +10304,10 @@
             
             const pfTbody = document.querySelector('#inv-pf-table tbody');
             if (pfTbody) {
-                if (pfEnStock.length === 0) {
+                if (pfTotalCount === 0) {
                     pfTbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:20px;">Aucun produit fini en stock</td></tr>';
                 } else {
-                    pfTbody.innerHTML = pfEnStock.map(lot => {
+                    let rows = pfLots.map(lot => {
                         const qtyKg = getLotQuantiteKg(lot);
                         const cout = lot.cout || 0;
                         const coutKg = qtyKg > 0 ? cout / qtyKg : 0;
@@ -10315,10 +10323,30 @@
                             <td style="text-align:right;font-weight:600;">${cout.toFixed(2)} €</td>
                             <td style="text-align:right;color:#666;">${coutKg.toFixed(2)} €/kg</td>
                             <td style="text-align:center;">
-                                <button class="btn btn-small btn-success" onclick="markLotAsVendu('${lot.id}')" title="Marquer comme vendu" style="padding:4px 10px;">✅ Vendu</button>
+                                <button class="btn btn-small btn-success" onclick="markLotAsVendu('${lot.id}')" title="Vendu" style="padding:4px 10px;">✅ Vendu</button>
                             </td>
                         </tr>`;
-                    }).join('');
+                    });
+                    rows = rows.concat(pfCustom.map(p => {
+                        const coutKg = p.quantiteKg > 0 ? p.cout / p.quantiteKg : 0;
+                        const dlc = p.dlc ? formatDate(p.dlc) : '-';
+                        const dlcAlert = generalSettings.dlcAlerte || 30;
+                        const dlcWarning = p.dlc && new Date(p.dlc) < new Date(Date.now() + dlcAlert * 86400000) ? ' style="color:#f44336;font-weight:bold;"' : '';
+                        return `<tr style="background: #fff8e1;">
+                            <td style="font-weight:600;">${p.nom} <span style="font-size:10px;background:#ff9800;color:white;padding:2px 6px;border-radius:4px;">EXTERNE</span></td>
+                            <td style="font-family:monospace;color:#999;">-</td>
+                            <td>${p.dateAjout ? formatDate(p.dateAjout) : '-'}</td>
+                            <td${dlcWarning}>${dlc}</td>
+                            <td style="text-align:right;font-weight:600;">${p.quantiteKg.toFixed(3)} kg</td>
+                            <td style="text-align:right;font-weight:600;">${p.cout.toFixed(2)} €</td>
+                            <td style="text-align:right;color:#666;">${coutKg.toFixed(2)} €/kg</td>
+                            <td style="text-align:center;">
+                                <button class="btn btn-small btn-success" onclick="markCustomProductVendu('${p.id}')" title="Vendu" style="padding:4px 8px;">✅</button>
+                                <button class="btn btn-small btn-danger" onclick="deleteCustomProduct('${p.id}')" title="Supprimer" style="padding:4px 8px;">🗑️</button>
+                            </td>
+                        </tr>`;
+                    }));
+                    pfTbody.innerHTML = rows.join('');
                 }
                 const pfFooterQty = document.getElementById('inv-pf-total-qty-footer');
                 if (pfFooterQty) pfFooterQty.textContent = pfTotalQty.toFixed(1) + ' kg';
@@ -10361,29 +10389,18 @@
             if (!qty || qty <= 0) { showAlert('Veuillez entrer une quantité valide', 'warning'); return; }
             
             const today = new Date().toISOString().split('T')[0];
-            const customLot = {
-                id: 'custom-' + Date.now(),
-                numero: 'EXT-' + Date.now().toString(36).toUpperCase(),
-                produit: nom,
-                date: today,
-                quantite: qty * 1000,
-                unite: 'g',
-                statut: 'fini',
-                dlc: dlc,
+            const product = {
+                id: 'cp-' + Date.now(),
+                nom: nom,
+                quantiteKg: qty,
                 cout: cout,
-                observations: 'Article ajouté manuellement (hors production)',
-                isCustomProduct: true,
-                ingredients: [],
-                operateur: ''
+                dlc: dlc,
+                dateAjout: today,
+                vendu: false
             };
             
-            const result = await saveToSupabase('lots', customLot, false);
-            if (result.success && result.data) {
-                customLot.id = result.data[0].id;
-            }
-            
-            lots.unshift(customLot);
-            saveToLocalStorage();
+            customProducts.push(product);
+            await saveCustomProducts();
             updateInventaireStats();
             
             document.getElementById('pf-custom-nom').value = '';
@@ -10392,6 +10409,43 @@
             document.getElementById('pf-custom-dlc').value = '';
             
             showAlert(`✅ "${nom}" ajouté à l'inventaire produits finis (${qty} kg, ${cout.toFixed(2)} €)`, 'success');
+        }
+        
+        async function markCustomProductVendu(productId) {
+            const product = customProducts.find(p => p.id === productId);
+            if (!product) return;
+            if (!confirm(`Marquer "${product.nom}" comme vendu ?`)) return;
+            product.vendu = true;
+            product.dateVente = new Date().toISOString().split('T')[0];
+            await saveCustomProducts();
+            updateInventaireStats();
+            showAlert(`✅ "${product.nom}" marqué comme vendu`, 'success');
+        }
+        
+        async function deleteCustomProduct(productId) {
+            const product = customProducts.find(p => p.id === productId);
+            if (!product) return;
+            if (!confirm(`Supprimer "${product.nom}" de l'inventaire ?`)) return;
+            customProducts = customProducts.filter(p => p.id !== productId);
+            await saveCustomProducts();
+            updateInventaireStats();
+            showAlert(`🗑️ "${product.nom}" supprimé`, 'success');
+        }
+        
+        async function saveCustomProducts() {
+            if (isOnline && supabaseClient) {
+                try {
+                    const { data: existing } = await supabaseClient.from('configuration')
+                        .select('id').eq('user_id', currentUser.id).eq('type', 'custom_products').single();
+                    const configData = { user_id: currentUser.id, type: 'custom_products', data: customProducts };
+                    if (existing) {
+                        await supabaseClient.from('configuration').update({ data: customProducts }).eq('id', existing.id);
+                    } else {
+                        await supabaseClient.from('configuration').insert(configData);
+                    }
+                } catch(e) { console.error('Erreur sauvegarde custom products:', e); }
+            }
+            saveToLocalStorage();
         }
         
         function updateInventaireFilters() {
