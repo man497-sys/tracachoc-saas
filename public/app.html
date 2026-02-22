@@ -4944,8 +4944,28 @@
                 
                 // Traiter les résultats
                 if (lotsResult.error) throw new Error(`Lots: ${lotsResult.error.message}`);
-                lots = (lotsResult.data || []).filter(l => !l.isCustomProduct);
+                lots = (lotsResult.data || []).filter(l => {
+                    if (l.isCustomProduct) return false;
+                    if (l.observations && l.observations.includes('Article ajouté manuellement')) return false;
+                    if (l.numero && l.numero.startsWith('EXT-')) return false;
+                    return true;
+                });
                 console.log('✅ Lots chargés:', lots.length);
+                
+                // Nettoyage: supprimer les anciens articles personnalisés de la table lots
+                const customLotsToClean = (lotsResult.data || []).filter(l => 
+                    l.isCustomProduct || 
+                    (l.observations && l.observations.includes('Article ajouté manuellement')) ||
+                    (l.numero && l.numero.startsWith('EXT-'))
+                );
+                if (customLotsToClean.length > 0) {
+                    console.log(`🧹 Nettoyage: ${customLotsToClean.length} articles personnalisés à retirer de la table lots`);
+                    for (const cl of customLotsToClean) {
+                        try {
+                            await supabaseClient.from('lots').delete().eq('id', cl.id);
+                        } catch(e) { console.error('Erreur nettoyage:', e); }
+                    }
+                }
                 
                 // Correction auto: lots stockés en grammes avec unite 'kg'
                 const lotsToFix = lots.filter(l => (!l.unite || l.unite === 'kg') && l.quantite > 50);
