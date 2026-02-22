@@ -3892,7 +3892,7 @@
         <span class="photo-lightbox-nav photo-lightbox-prev" onclick="navigateLightbox(-1)">❮</span>
         <span class="photo-lightbox-nav photo-lightbox-next" onclick="navigateLightbox(1)">❯</span>
         <div class="photo-lightbox-content">
-            <img id="lightbox-image" src="" alt="Photo agrandie" onclick="toggleZoom()">
+            <img id="lightbox-image" src="" alt="Photo agrandie">
         </div>
         <div class="photo-lightbox-info">
             <div id="lightbox-caption"></div>
@@ -15778,29 +15778,42 @@ Voulez-vous continuer ?`;
         }, { passive: false });
         
         (function() {
-            let isDragging = false, startX, startY, scrollLeft, scrollTop;
+            let isDragging = false, hasMoved = false, startX, startY, scrollLeft, scrollTop;
+            
             document.addEventListener('mousedown', function(e) {
                 const img = document.getElementById('lightbox-image');
-                if (!img || !img.classList.contains('zoomed') || e.target !== img) return;
+                if (!img || e.target !== img) return;
                 isDragging = true;
+                hasMoved = false;
                 const container = img.parentElement;
                 startX = e.clientX; startY = e.clientY;
                 scrollLeft = container.scrollLeft; scrollTop = container.scrollTop;
-                img.style.cursor = 'grabbing';
+                if (img.classList.contains('zoomed')) img.style.cursor = 'grabbing';
                 e.preventDefault();
             });
+            
             document.addEventListener('mousemove', function(e) {
                 if (!isDragging) return;
+                const dx = Math.abs(e.clientX - startX);
+                const dy = Math.abs(e.clientY - startY);
+                if (dx > 5 || dy > 5) hasMoved = true;
                 const img = document.getElementById('lightbox-image');
+                if (!img || !img.classList.contains('zoomed')) return;
                 const container = img.parentElement;
                 container.scrollLeft = scrollLeft - (e.clientX - startX);
                 container.scrollTop = scrollTop - (e.clientY - startY);
             });
-            document.addEventListener('mouseup', function() {
+            
+            document.addEventListener('mouseup', function(e) {
                 if (isDragging) {
+                    const wasClick = !hasMoved;
                     isDragging = false;
+                    hasMoved = false;
                     const img = document.getElementById('lightbox-image');
-                    if (img && img.classList.contains('zoomed')) img.style.cursor = 'grab';
+                    if (!img) return;
+                    if (img.classList.contains('zoomed')) img.style.cursor = 'grab';
+                    // Only toggle zoom on real click (no drag movement)
+                    if (wasClick && e.target === img) toggleZoom();
                 }
             });
         })();
