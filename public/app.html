@@ -2292,6 +2292,32 @@
                 <h3 style="margin:0; font-size: 16px;">🍫 Produits Finis en Stock</h3>
             </div>
             <div id="body-inv-pf" class="config-section-body">
+                <!-- Formulaire ajout produit personnalisé -->
+                <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 2px solid #ff9800;">
+                    <h4 style="margin: 0 0 10px 0; color: #e65100;">➕ Ajouter un article au stock</h4>
+                    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                        <div class="form-group">
+                            <label>Nom du produit *</label>
+                            <input type="text" id="pf-custom-nom" placeholder="Ex: Tablette 70%">
+                        </div>
+                        <div class="form-group">
+                            <label>Quantité (kg) *</label>
+                            <input type="number" id="pf-custom-qty" step="0.001" min="0" placeholder="Ex: 0.5">
+                        </div>
+                        <div class="form-group">
+                            <label>Coût total (€)</label>
+                            <input type="number" id="pf-custom-cout" step="0.01" min="0" placeholder="Ex: 25.00">
+                        </div>
+                        <div class="form-group">
+                            <label>DLC</label>
+                            <input type="date" id="pf-custom-dlc">
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: end;">
+                            <button class="btn btn-success" onclick="addCustomProduct()" style="width: 100%;">➕ Ajouter</button>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="summary-cards" style="margin-bottom: 15px;">
                     <div class="summary-card">
                         <div class="summary-number" id="inv-pf-count">0</div>
@@ -10323,6 +10349,49 @@
             saveToLocalStorage();
             updateInventaireStats();
             showAlert(`✅ Lot ${lot.numero} marqué comme vendu`, 'success');
+        }
+        
+        async function addCustomProduct() {
+            const nom = document.getElementById('pf-custom-nom')?.value.trim();
+            const qty = parseFloat(document.getElementById('pf-custom-qty')?.value);
+            const cout = parseFloat(document.getElementById('pf-custom-cout')?.value) || 0;
+            const dlc = document.getElementById('pf-custom-dlc')?.value || '';
+            
+            if (!nom) { showAlert('Veuillez entrer un nom de produit', 'warning'); return; }
+            if (!qty || qty <= 0) { showAlert('Veuillez entrer une quantité valide', 'warning'); return; }
+            
+            const today = new Date().toISOString().split('T')[0];
+            const customLot = {
+                id: 'custom-' + Date.now(),
+                numero: 'EXT-' + Date.now().toString(36).toUpperCase(),
+                produit: nom,
+                date: today,
+                quantite: qty * 1000,
+                unite: 'g',
+                statut: 'fini',
+                dlc: dlc,
+                cout: cout,
+                observations: 'Article ajouté manuellement (hors production)',
+                isCustomProduct: true,
+                ingredients: [],
+                operateur: ''
+            };
+            
+            const result = await saveToSupabase('lots', customLot, false);
+            if (result.success && result.data) {
+                customLot.id = result.data[0].id;
+            }
+            
+            lots.unshift(customLot);
+            saveToLocalStorage();
+            updateInventaireStats();
+            
+            document.getElementById('pf-custom-nom').value = '';
+            document.getElementById('pf-custom-qty').value = '';
+            document.getElementById('pf-custom-cout').value = '';
+            document.getElementById('pf-custom-dlc').value = '';
+            
+            showAlert(`✅ "${nom}" ajouté à l'inventaire produits finis (${qty} kg, ${cout.toFixed(2)} €)`, 'success');
         }
         
         function updateInventaireFilters() {
