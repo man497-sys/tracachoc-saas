@@ -2134,7 +2134,28 @@
 
         <!-- Inventaire -->
         <div id="inventaire" class="tab-content">
-            <h2>📦 Inventaire des Matières Premières</h2>
+            <h2>📦 Inventaire Global</h2>
+            
+            <!-- Résumé global -->
+            <div style="background: linear-gradient(135deg, #1a237e 0%, #283593 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; color: white;">
+                <h3 style="margin: 0 0 15px 0; color: #ffcc80;">📊 Valorisation Globale de l'Inventaire</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: 800;" id="inv-global-mp-valeur">0 €</div>
+                        <div style="font-size: 12px; opacity: 0.8;">🧪 Matières Premières</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: 800;" id="inv-global-pf-valeur">0 €</div>
+                        <div style="font-size: 12px; opacity: 0.8;">🍫 Produits Finis</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #ffcc80;">
+                        <div style="font-size: 28px; font-weight: 800; color: #ffcc80;" id="inv-global-total">0 €</div>
+                        <div style="font-size: 13px; color: #ffcc80;">💰 TOTAL INVENTAIRE</div>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 25px;">🧪 Matières Premières</h3>
             
             <div id="inventaire-alerts-container">
                 <!-- Les alertes de stock seront affichées ici -->
@@ -2260,6 +2281,55 @@
                     </tfoot>
                 </table>
             </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Produits Finis en Stock -->
+        <div style="margin-top: 30px;">
+            <div id="header-inv-pf" class="config-section-header" onclick="toggleConfigSection('inv-pf')">
+                <span class="toggle-arrow">▼</span>
+                <h3 style="margin:0; font-size: 16px;">🍫 Produits Finis en Stock</h3>
+            </div>
+            <div id="body-inv-pf" class="config-section-body">
+                <div class="summary-cards" style="margin-bottom: 15px;">
+                    <div class="summary-card">
+                        <div class="summary-number" id="inv-pf-count">0</div>
+                        <div class="summary-label">Lots en stock</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-number" id="inv-pf-qty">0</div>
+                        <div class="summary-label">Quantité totale (kg)</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-number" id="inv-pf-valeur">0</div>
+                        <div class="summary-label">Coût de revient (€)</div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="inv-pf-table">
+                        <thead>
+                            <tr>
+                                <th>Produit</th>
+                                <th>N° Lot</th>
+                                <th>Date Production</th>
+                                <th>DLC</th>
+                                <th>Quantité (kg)</th>
+                                <th>Coût Revient (€)</th>
+                                <th>Coût/kg</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr style="background: #f8f9fa; font-weight: bold;">
+                                <td colspan="4" style="text-align: right;">TOTAL :</td>
+                                <td id="inv-pf-total-qty-footer">0 kg</td>
+                                <td id="inv-pf-total-valeur-footer">0 €</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
             </div>
         </div>
@@ -10185,6 +10255,74 @@
             document.getElementById('inventaire-stock-total').textContent = stockTotal.toFixed(1);
             document.getElementById('inventaire-valeur-totale').textContent = valeurTotale.toFixed(2);
             document.getElementById('inventaire-alertes').textContent = alertes;
+            
+            // Produits finis en stock
+            const pfEnStock = lots.filter(l => l.statut === 'fini' && !l.vendu);
+            const pfTotalQty = pfEnStock.reduce((sum, l) => sum + getLotQuantiteKg(l), 0);
+            const pfTotalValeur = pfEnStock.reduce((sum, l) => sum + (l.cout || 0), 0);
+            
+            const pfCountEl = document.getElementById('inv-pf-count');
+            if (pfCountEl) pfCountEl.textContent = pfEnStock.length;
+            const pfQtyEl = document.getElementById('inv-pf-qty');
+            if (pfQtyEl) pfQtyEl.textContent = pfTotalQty.toFixed(1);
+            const pfValeurEl = document.getElementById('inv-pf-valeur');
+            if (pfValeurEl) pfValeurEl.textContent = pfTotalValeur.toFixed(2);
+            
+            const pfTbody = document.querySelector('#inv-pf-table tbody');
+            if (pfTbody) {
+                if (pfEnStock.length === 0) {
+                    pfTbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:20px;">Aucun produit fini en stock</td></tr>';
+                } else {
+                    pfTbody.innerHTML = pfEnStock.map(lot => {
+                        const qtyKg = getLotQuantiteKg(lot);
+                        const cout = lot.cout || 0;
+                        const coutKg = qtyKg > 0 ? cout / qtyKg : 0;
+                        const dlc = lot.dlc ? formatDate(lot.dlc) : '-';
+                        const dlcAlert = generalSettings.dlcAlerte || 30;
+                        const dlcWarning = lot.dlc && new Date(lot.dlc) < new Date(Date.now() + dlcAlert * 86400000) ? ' style="color:#f44336;font-weight:bold;"' : '';
+                        return `<tr>
+                            <td style="font-weight:600;">${lot.produit || '-'}</td>
+                            <td style="font-family:monospace;">${lot.numero || '-'}</td>
+                            <td>${lot.date ? formatDate(lot.date) : '-'}</td>
+                            <td${dlcWarning}>${dlc}</td>
+                            <td style="text-align:right;font-weight:600;">${qtyKg.toFixed(3)} kg</td>
+                            <td style="text-align:right;font-weight:600;">${cout.toFixed(2)} €</td>
+                            <td style="text-align:right;color:#666;">${coutKg.toFixed(2)} €/kg</td>
+                            <td style="text-align:center;">
+                                <button class="btn btn-small btn-success" onclick="markLotAsVendu('${lot.id}')" title="Marquer comme vendu" style="padding:4px 10px;">✅ Vendu</button>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                }
+                const pfFooterQty = document.getElementById('inv-pf-total-qty-footer');
+                if (pfFooterQty) pfFooterQty.textContent = pfTotalQty.toFixed(1) + ' kg';
+                const pfFooterVal = document.getElementById('inv-pf-total-valeur-footer');
+                if (pfFooterVal) pfFooterVal.textContent = pfTotalValeur.toFixed(2) + ' €';
+            }
+            
+            // Résumé global
+            const globalMPEl = document.getElementById('inv-global-mp-valeur');
+            if (globalMPEl) globalMPEl.textContent = valeurTotale.toFixed(2) + ' €';
+            const globalPFEl = document.getElementById('inv-global-pf-valeur');
+            if (globalPFEl) globalPFEl.textContent = pfTotalValeur.toFixed(2) + ' €';
+            const globalTotalEl = document.getElementById('inv-global-total');
+            if (globalTotalEl) globalTotalEl.textContent = (valeurTotale + pfTotalValeur).toFixed(2) + ' €';
+        }
+        
+        async function markLotAsVendu(lotId) {
+            const lot = lots.find(l => String(l.id) === String(lotId));
+            if (!lot) { showAlert('Lot non trouvé', 'danger'); return; }
+            if (!confirm(`Marquer le lot ${lot.numero} (${lot.produit}) comme vendu ?\n\nIl sera retiré de l'inventaire produits finis.`)) return;
+            lot.vendu = true;
+            lot.dateVente = new Date().toISOString().split('T')[0];
+            if (isOnline && supabaseClient && lot.id) {
+                try {
+                    await supabaseClient.from('lots').update({ vendu: true, date_vente: lot.dateVente }).eq('id', lot.id);
+                } catch(e) { console.error('Erreur update lot vendu:', e); }
+            }
+            saveToLocalStorage();
+            updateInventaireStats();
+            showAlert(`✅ Lot ${lot.numero} marqué comme vendu`, 'success');
         }
         
         function updateInventaireFilters() {
