@@ -1117,23 +1117,24 @@
             transition: all 0.3s ease;
         }
 
+        .photo-lightbox-content {
+            max-width: 90vw;
+            max-height: 80vh;
+            text-align: center;
+            overflow: auto;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .photo-lightbox-content img.zoomed {
             max-width: none;
             max-height: none;
             cursor: grab;
-            transform-origin: 0 0;
+            border-radius: 0;
         }
 
         .photo-lightbox-content img.zoomed:active {
             cursor: grabbing;
-        }
-
-        .photo-lightbox-content {
-            max-width: 90%;
-            max-height: 80vh;
-            text-align: center;
-            overflow: hidden;
-            position: relative;
         }
 
         .photo-lightbox-nav {
@@ -15723,123 +15724,86 @@ Voulez-vous continuer ?`;
             updateLightboxImage();
         }
         
-        // === PHOTO VIEWER : Zoom + Pan (déplacement) ===
-        let viewerState = { scale: 1, panX: 0, panY: 0, isPanning: false, startX: 0, startY: 0 };
+        // === PHOTO VIEWER : Zoom simple avec scroll natif ===
+        let currentZoomLevel = 1;
         
         function toggleZoom() {
             const img = document.getElementById('lightbox-image');
-            const isZoomed = img.classList.contains('zoomed');
+            const container = img.parentElement;
             
-            if (isZoomed) {
+            if (img.classList.contains('zoomed')) {
                 img.classList.remove('zoomed');
-                viewerState.scale = 1;
-                viewerState.panX = 0;
-                viewerState.panY = 0;
                 img.style.transform = `rotate(${currentRotation}deg)`;
+                img.style.width = '';
                 img.style.cursor = 'zoom-in';
+                currentZoomLevel = 1;
+                container.scrollTop = 0;
+                container.scrollLeft = 0;
             } else {
                 img.classList.add('zoomed');
-                viewerState.scale = 3;
-                viewerState.panX = 0;
-                viewerState.panY = 0;
-                updateImageTransform();
+                currentZoomLevel = 3;
+                img.style.width = (img.naturalWidth * currentZoomLevel) + 'px';
+                img.style.transform = `rotate(${currentRotation}deg)`;
                 img.style.cursor = 'grab';
+                setTimeout(() => {
+                    container.scrollLeft = (container.scrollWidth - container.clientWidth) / 2;
+                    container.scrollTop = (container.scrollHeight - container.clientHeight) / 2;
+                }, 50);
             }
-        }
-        
-        function updateImageTransform() {
-            const img = document.getElementById('lightbox-image');
-            img.style.transform = `rotate(${currentRotation}deg) scale(${viewerState.scale}) translate(${viewerState.panX}px, ${viewerState.panY}px)`;
         }
         
         function zoomImage(delta) {
             const img = document.getElementById('lightbox-image');
-            viewerState.scale = Math.max(1, Math.min(8, viewerState.scale + delta));
-            
-            if (viewerState.scale === 1) {
+            currentZoomLevel = Math.max(1, Math.min(8, currentZoomLevel + delta));
+            if (currentZoomLevel <= 1) {
+                currentZoomLevel = 1;
                 img.classList.remove('zoomed');
-                viewerState.panX = 0;
-                viewerState.panY = 0;
+                img.style.width = '';
                 img.style.cursor = 'zoom-in';
             } else {
                 img.classList.add('zoomed');
+                img.style.width = (img.naturalWidth * currentZoomLevel) + 'px';
                 img.style.cursor = 'grab';
             }
-            updateImageTransform();
+            img.style.transform = `rotate(${currentRotation}deg)`;
         }
         
-        // Mouse wheel zoom
         document.addEventListener('wheel', function(e) {
             const lightbox = document.getElementById('photo-lightbox');
-            if (!lightbox.classList.contains('active')) return;
-            const img = document.getElementById('lightbox-image');
-            if (!img) return;
-            const rect = img.getBoundingClientRect();
-            if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
-                e.preventDefault();
-                zoomImage(e.deltaY < 0 ? 0.5 : -0.5);
-            }
-        }, { passive: false });
-        
-        // Pan with mouse drag
-        document.addEventListener('mousedown', function(e) {
-            const img = document.getElementById('lightbox-image');
-            if (!img || !img.classList.contains('zoomed') || e.target !== img) return;
-            viewerState.isPanning = true;
-            viewerState.startX = e.clientX - viewerState.panX;
-            viewerState.startY = e.clientY - viewerState.panY;
-            img.style.cursor = 'grabbing';
+            if (!lightbox || !lightbox.classList.contains('active')) return;
+            const container = document.querySelector('.photo-lightbox-content');
+            if (!container || !container.contains(e.target)) return;
             e.preventDefault();
-        });
+            zoomImage(e.deltaY < 0 ? 0.3 : -0.3);
+        }, { passive: false });
         
-        document.addEventListener('mousemove', function(e) {
-            if (!viewerState.isPanning) return;
-            viewerState.panX = e.clientX - viewerState.startX;
-            viewerState.panY = e.clientY - viewerState.startY;
-            updateImageTransform();
-        });
-        
-        document.addEventListener('mouseup', function() {
-            if (viewerState.isPanning) {
-                viewerState.isPanning = false;
+        (function() {
+            let isDragging = false, startX, startY, scrollLeft, scrollTop;
+            document.addEventListener('mousedown', function(e) {
                 const img = document.getElementById('lightbox-image');
-                if (img && img.classList.contains('zoomed')) img.style.cursor = 'grab';
-            }
-        });
-        
-        // Touch pan + pinch zoom (mobile)
-        let touchStartDist = 0;
-        document.addEventListener('touchstart', function(e) {
-            const img = document.getElementById('lightbox-image');
-            if (!img || e.target !== img) return;
-            if (e.touches.length === 1 && img.classList.contains('zoomed')) {
-                viewerState.isPanning = true;
-                viewerState.startX = e.touches[0].clientX - viewerState.panX;
-                viewerState.startY = e.touches[0].clientY - viewerState.panY;
+                if (!img || !img.classList.contains('zoomed') || e.target !== img) return;
+                isDragging = true;
+                const container = img.parentElement;
+                startX = e.clientX; startY = e.clientY;
+                scrollLeft = container.scrollLeft; scrollTop = container.scrollTop;
+                img.style.cursor = 'grabbing';
                 e.preventDefault();
-            } else if (e.touches.length === 2) {
-                touchStartDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                e.preventDefault();
-            }
-        }, { passive: false });
-        
-        document.addEventListener('touchmove', function(e) {
-            const img = document.getElementById('lightbox-image');
-            if (!img || e.target !== img) return;
-            if (e.touches.length === 1 && viewerState.isPanning) {
-                viewerState.panX = e.touches[0].clientX - viewerState.startX;
-                viewerState.panY = e.touches[0].clientY - viewerState.startY;
-                updateImageTransform();
-                e.preventDefault();
-            } else if (e.touches.length === 2) {
-                const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                zoomImage((dist - touchStartDist) * 0.01);
-                touchStartDist = dist;
-                e.preventDefault();
-            }
-        }, { passive: false });
-        
-        document.addEventListener('touchend', function() { viewerState.isPanning = false; });
+            });
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                const img = document.getElementById('lightbox-image');
+                const container = img.parentElement;
+                container.scrollLeft = scrollLeft - (e.clientX - startX);
+                container.scrollTop = scrollTop - (e.clientY - startY);
+            });
+            document.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    const img = document.getElementById('lightbox-image');
+                    if (img && img.classList.contains('zoomed')) img.style.cursor = 'grab';
+                }
+            });
+        })();
         
         function closeLightbox() {
             document.getElementById('photo-lightbox').classList.remove('active');
@@ -15848,9 +15812,10 @@ Voulez-vous continuer ?`;
             img.classList.remove('zoomed');
             img.classList.remove('sharpened');
             img.style.transform = '';
+            img.style.width = '';
             img.style.cursor = 'zoom-in';
             currentRotation = 0;
-            viewerState = { scale: 1, panX: 0, panY: 0, isPanning: false, startX: 0, startY: 0 };
+            currentZoomLevel = 1;
         }
         
         function closeLightboxOnBackground(event) {
