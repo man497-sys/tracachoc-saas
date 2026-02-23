@@ -4958,18 +4958,15 @@
                     console.log(`ℹ️ ${customLotsSkipped} article(s) personnalisé(s) ignoré(s) dans les lots`);
                 }
                 
-                // Correction auto: lots stockés en grammes avec unite 'kg'
+                // Correction auto: lots stockés en grammes avec unite 'kg' (côté client uniquement)
                 const lotsToFix = lots.filter(l => (!l.unite || l.unite === 'kg') && l.quantite > 50);
                 if (lotsToFix.length > 0) {
-                    console.log(`🔧 Correction auto: ${lotsToFix.length} lot(s) avec quantité en grammes`);
+                    console.log(`🔧 Correction locale: ${lotsToFix.length} lot(s) avec quantité en grammes`);
                     for (const lot of lotsToFix) {
                         const oldQ = lot.quantite;
                         lot.quantite = lot.quantite / 1000;
                         console.log(`   🔧 ${lot.numero}: ${oldQ} → ${lot.quantite.toFixed(3)} kg`);
-                        // Sauvegarder le lot complet dans Supabase
-                        await saveToSupabase('lots', lot, true);
                     }
-                    console.log(`✅ ${lotsToFix.length} lot(s) corrigé(s) dans Supabase`);
                 }
                 
                 if (mpResult.error) throw new Error(`Matières premières: ${mpResult.error.message}`);
