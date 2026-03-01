@@ -3480,28 +3480,76 @@
 
         <!-- Rapports -->
         <div id="rapports" class="tab-content">
-            <h2>Rapports et Analyses</h2>
+            <h2>📊 Rapports et Analyses</h2>
+            
+            <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 2px solid #2196f3;">
+                <h4 style="margin: 0 0 10px 0; color: #1565c0;">📅 Période d'analyse</h4>
+                <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                    <div class="form-group">
+                        <label>Du</label>
+                        <input type="date" id="rapport-date-debut" onchange="updateRapportStats()">
+                    </div>
+                    <div class="form-group">
+                        <label>Au</label>
+                        <input type="date" id="rapport-date-fin" onchange="updateRapportStats()">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:end;gap:8px;">
+                        <button class="btn btn-small" onclick="setRapportPeriod('month')" style="padding:8px 12px;">Ce mois</button>
+                        <button class="btn btn-small" onclick="setRapportPeriod('quarter')" style="padding:8px 12px;">Trimestre</button>
+                        <button class="btn btn-small" onclick="setRapportPeriod('year')" style="padding:8px 12px;">Année</button>
+                        <button class="btn btn-small btn-secondary" onclick="setRapportPeriod('all')" style="padding:8px 12px;">Tout</button>
+                    </div>
+                </div>
+            </div>
             
             <div class="summary-cards">
                 <div class="summary-card">
                     <div class="summary-number" id="rapport-lots-mois">0</div>
-                    <div class="summary-label">Lots ce mois</div>
+                    <div class="summary-label">Lots produits</div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-number" id="rapport-production-mois">0</div>
-                    <div class="summary-label">kg produits ce mois</div>
+                    <div class="summary-label">kg produits</div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-number" id="rapport-cout-moyen">0</div>
-                    <div class="summary-label">Coût moyen par lot (€)</div>
+                    <div class="summary-label">Coût total (€)</div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-number" id="rapport-note-qualite">0</div>
-                    <div class="summary-label">Note qualité moyenne</div>
+                    <div class="summary-label">Coût moyen/kg (€)</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 25px;">
+                <h3>🍫 Production par Produit</h3>
+                <div class="table-responsive">
+                    <table class="data-table" id="rapport-par-produit">
+                        <thead><tr><th>Produit</th><th style="text-align:right;">Nb Lots</th><th style="text-align:right;">Quantité (kg)</th><th style="text-align:right;">Coût Total (€)</th><th style="text-align:right;">Coût/kg (€)</th><th style="text-align:right;">% Production</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div style="margin-top: 25px;">
+                <h3>📅 Production par Mois</h3>
+                <div class="table-responsive">
+                    <table class="data-table" id="rapport-par-mois">
+                        <thead><tr><th>Mois</th><th style="text-align:right;">Nb Lots</th><th style="text-align:right;">Quantité (kg)</th><th style="text-align:right;">Coût Total (€)</th><th style="text-align:right;">Coût/kg (€)</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div style="margin-top: 25px;">
+                <h3>🧪 Top Matières Premières Consommées</h3>
+                <div class="table-responsive">
+                    <table class="data-table" id="rapport-top-mp">
+                        <thead><tr><th>Matière Première</th><th style="text-align:right;">Quantité Utilisée (kg)</th><th style="text-align:right;">Coût (€)</th><th style="text-align:right;">Nb Lots</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
 
-            <div class="export-section">
+            <div class="export-section" style="margin-top: 25px;">
                 <h3>📊 Génération de Rapports et Sauvegarde</h3>
                 <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
                     Exportez vos données ou créez une sauvegarde complète de l'application.
@@ -5770,6 +5818,7 @@
                     loadGeneralSettings();
                     break;
                 case 'rapports':
+                    if (!document.getElementById('rapport-date-debut').value) setRapportPeriod('month');
                     updateRapportStats();
                     break;
                 case 'dashboard':
@@ -17304,28 +17353,159 @@ Voulez-vous continuer ?`;
             }
         }
 
+        function setRapportPeriod(period) {
+            const now = new Date();
+            let debut, fin;
+            if (period === 'month') {
+                debut = new Date(now.getFullYear(), now.getMonth(), 1);
+                fin = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            } else if (period === 'quarter') {
+                const q = Math.floor(now.getMonth() / 3) * 3;
+                debut = new Date(now.getFullYear(), q, 1);
+                fin = new Date(now.getFullYear(), q + 3, 0);
+            } else if (period === 'year') {
+                debut = new Date(now.getFullYear(), 0, 1);
+                fin = new Date(now.getFullYear(), 11, 31);
+            } else {
+                document.getElementById('rapport-date-debut').value = '';
+                document.getElementById('rapport-date-fin').value = '';
+                updateRapportStats();
+                return;
+            }
+            document.getElementById('rapport-date-debut').value = debut.toISOString().split('T')[0];
+            document.getElementById('rapport-date-fin').value = fin.toISOString().split('T')[0];
+            updateRapportStats();
+        }
+        
         function updateRapportStats() {
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            const thisMonthLots = lots.filter(l => {
-                const date = new Date(l.date);
-                return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+            const dateDebut = document.getElementById('rapport-date-debut')?.value;
+            const dateFin = document.getElementById('rapport-date-fin')?.value;
+            
+            // Filtrer les lots par période
+            let filteredPeriod = lots.filter(l => l.statut !== 'vendu');
+            if (dateDebut) filteredPeriod = filteredPeriod.filter(l => l.date >= dateDebut);
+            if (dateFin) filteredPeriod = filteredPeriod.filter(l => l.date <= dateFin);
+            
+            // Résumé global
+            const totalLots = filteredPeriod.length;
+            const totalKg = filteredPeriod.reduce((sum, l) => sum + getLotQuantiteKg(l), 0);
+            const totalCout = filteredPeriod.reduce((sum, l) => sum + (l.cout || 0), 0);
+            const coutMoyenKg = totalKg > 0 ? totalCout / totalKg : 0;
+            
+            document.getElementById('rapport-lots-mois').textContent = totalLots;
+            document.getElementById('rapport-production-mois').textContent = totalKg.toFixed(1);
+            document.getElementById('rapport-cout-moyen').textContent = totalCout.toFixed(2);
+            document.getElementById('rapport-note-qualite').textContent = coutMoyenKg.toFixed(2);
+            
+            // === Production par Produit ===
+            const parProduit = {};
+            filteredPeriod.forEach(l => {
+                const nom = l.produit || 'Non défini';
+                if (!parProduit[nom]) parProduit[nom] = { lots: 0, kg: 0, cout: 0 };
+                parProduit[nom].lots++;
+                parProduit[nom].kg += getLotQuantiteKg(l);
+                parProduit[nom].cout += (l.cout || 0);
             });
             
-            document.getElementById('rapport-lots-mois').textContent = thisMonthLots.length;
+            const produitsSorted = Object.entries(parProduit).sort((a, b) => b[1].kg - a[1].kg);
+            const tbodyProduit = document.querySelector('#rapport-par-produit tbody');
+            if (tbodyProduit) {
+                if (produitsSorted.length === 0) {
+                    tbodyProduit.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Aucune production sur cette période</td></tr>';
+                } else {
+                    tbodyProduit.innerHTML = produitsSorted.map(([nom, data]) => {
+                        const pct = totalKg > 0 ? (data.kg / totalKg * 100) : 0;
+                        const coutKg = data.kg > 0 ? data.cout / data.kg : 0;
+                        const barColor = pct > 20 ? '#4caf50' : pct > 10 ? '#ff9800' : '#2196f3';
+                        return `<tr>
+                            <td style="font-weight:600;">${nom}</td>
+                            <td style="text-align:right;">${data.lots}</td>
+                            <td style="text-align:right;font-weight:600;">${data.kg.toFixed(1)} kg</td>
+                            <td style="text-align:right;">${data.cout.toFixed(2)} €</td>
+                            <td style="text-align:right;color:#666;">${coutKg.toFixed(2)} €</td>
+                            <td style="text-align:right;">
+                                <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;">
+                                    <div style="width:80px;height:12px;background:#eee;border-radius:6px;overflow:hidden;">
+                                        <div style="width:${pct}%;height:100%;background:${barColor};border-radius:6px;"></div>
+                                    </div>
+                                    <span style="font-weight:600;min-width:45px;">${pct.toFixed(1)}%</span>
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                }
+            }
             
-            const kgThisMonth = thisMonthLots
-                .reduce((sum, l) => sum + getLotQuantiteKg(l), 0);
-            document.getElementById('rapport-production-mois').textContent = kgThisMonth.toFixed(1);
+            // === Production par Mois ===
+            const moisNoms = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+            const parMois = {};
+            filteredPeriod.forEach(l => {
+                if (!l.date) return;
+                const d = new Date(l.date);
+                const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                const label = `${moisNoms[d.getMonth()]} ${d.getFullYear()}`;
+                if (!parMois[key]) parMois[key] = { label, lots: 0, kg: 0, cout: 0 };
+                parMois[key].lots++;
+                parMois[key].kg += getLotQuantiteKg(l);
+                parMois[key].cout += (l.cout || 0);
+            });
             
-            const totalCost = thisMonthLots.reduce((sum, l) => sum + (l.cout || 0), 0);
-            const avgCost = thisMonthLots.length > 0 ? totalCost / thisMonthLots.length : 0;
-            document.getElementById('rapport-cout-moyen').textContent = avgCost.toFixed(2);
+            const moisSorted = Object.entries(parMois).sort((a, b) => b[0].localeCompare(a[0]));
+            const tbodyMois = document.querySelector('#rapport-par-mois tbody');
+            if (tbodyMois) {
+                if (moisSorted.length === 0) {
+                    tbodyMois.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">Aucune donnée</td></tr>';
+                } else {
+                    tbodyMois.innerHTML = moisSorted.map(([key, data]) => {
+                        const coutKg = data.kg > 0 ? data.cout / data.kg : 0;
+                        return `<tr>
+                            <td style="font-weight:600;">${data.label}</td>
+                            <td style="text-align:right;">${data.lots}</td>
+                            <td style="text-align:right;font-weight:600;">${data.kg.toFixed(1)} kg</td>
+                            <td style="text-align:right;">${data.cout.toFixed(2)} €</td>
+                            <td style="text-align:right;color:#666;">${coutKg.toFixed(2)} €/kg</td>
+                        </tr>`;
+                    }).join('');
+                }
+            }
             
-            const avgNote = controlesQualite.length > 0 ? 
-                controlesQualite.reduce((sum, cq) => sum + (cq.note || 0), 0) / controlesQualite.length : 0;
-            document.getElementById('rapport-note-qualite').textContent = avgNote.toFixed(1);
+            // === Top MP Consommées ===
+            const mpUsage = {};
+            filteredPeriod.forEach(l => {
+                let ingredients = l.ingredients;
+                if (typeof ingredients === 'string') {
+                    try { ingredients = JSON.parse(ingredients); } catch(e) { ingredients = []; }
+                }
+                if (ingredients && ingredients._isMixte) return;
+                if (!Array.isArray(ingredients)) return;
+                ingredients.forEach(ing => {
+                    const nom = ing.matierePremiere || ing.nom || 'Inconnu';
+                    if (!mpUsage[nom]) mpUsage[nom] = { kg: 0, cout: 0, lots: new Set() };
+                    mpUsage[nom].kg += (ing.quantiteUtilisee || ing.quantite || 0);
+                    mpUsage[nom].cout += (ing.coutTotal || 0);
+                    mpUsage[nom].lots.add(l.id);
+                });
+            });
+            
+            const mpSorted = Object.entries(mpUsage).sort((a, b) => b[1].kg - a[1].kg).slice(0, 15);
+            const tbodyMP = document.querySelector('#rapport-top-mp tbody');
+            if (tbodyMP) {
+                if (mpSorted.length === 0) {
+                    tbodyMP.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#999;">Aucune donnée</td></tr>';
+                } else {
+                    tbodyMP.innerHTML = mpSorted.map(([nom, data]) => {
+                        return `<tr>
+                            <td style="font-weight:600;">${nom}</td>
+                            <td style="text-align:right;font-weight:600;">${data.kg.toFixed(3)} kg</td>
+                            <td style="text-align:right;">${data.cout.toFixed(2)} €</td>
+                            <td style="text-align:right;">${data.lots.size}</td>
+                        </tr>`;
+                    }).join('');
+                }
+            }
         }
+        
+
         
         // ============================================
         // SYSTÈME D'ARCHIVAGE DES MATIÈRES PREMIÈRES
