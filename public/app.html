@@ -17410,6 +17410,47 @@ Voulez-vous continuer ?`;
             document.getElementById('rapport-cout-moyen').textContent = totalCout.toFixed(2);
             document.getElementById('rapport-note-qualite').textContent = coutMoyenKg.toFixed(2);
             
+            // Stats supplémentaires
+            const produitsUniques = new Set(filteredPeriod.map(l => l.produit)).size;
+            const lotsVendus = lots.filter(l => {
+                if (l.statut !== 'vendu') return false;
+                if (!l.date) return true;
+                if (dateDebut && l.date < dateDebut) return false;
+                if (dateFin && l.date > dateFin) return false;
+                return true;
+            }).length;
+            const kgMoyenLot = totalLots > 0 ? totalKg / totalLots : 0;
+            
+            // MP utilisées dans les lots de la période
+            const mpSet = new Set();
+            filteredPeriod.forEach(l => {
+                let ingredients = l.ingredients;
+                if (typeof ingredients === 'string') { try { ingredients = JSON.parse(ingredients); } catch(e) { ingredients = []; } }
+                if (ingredients && !ingredients._isMixte && Array.isArray(ingredients)) {
+                    ingredients.forEach(ing => mpSet.add(ing.matierePremiere || ing.nom || ''));
+                }
+            });
+            
+            // Réceptions dans la période
+            let receptionsPeriode = receptions;
+            if (dateDebut) receptionsPeriode = receptionsPeriode.filter(r => (r.date_reception || r.dateReception || '') >= dateDebut);
+            if (dateFin) receptionsPeriode = receptionsPeriode.filter(r => (r.date_reception || r.dateReception || '') <= dateFin);
+            
+            // Valeur stock MP actuel
+            const valeurStockMP = matieresPremières.filter(mp => !mp.archived).reduce((sum, mp) => {
+                const qty = mp.quantite_actuelle || mp.quantiteActuelle || 0;
+                const prix = mp.cout || 0;
+                return sum + (qty * prix);
+            }, 0);
+            
+            const el = id => document.getElementById(id);
+            if (el('rapport-nb-produits')) el('rapport-nb-produits').textContent = produitsUniques;
+            if (el('rapport-lots-vendus')) el('rapport-lots-vendus').textContent = lotsVendus;
+            if (el('rapport-kg-moyen-lot')) el('rapport-kg-moyen-lot').textContent = kgMoyenLot.toFixed(2);
+            if (el('rapport-nb-mp-utilisees')) el('rapport-nb-mp-utilisees').textContent = mpSet.size;
+            if (el('rapport-receptions')) el('rapport-receptions').textContent = receptionsPeriode.length;
+            if (el('rapport-valeur-stock')) el('rapport-valeur-stock').textContent = valeurStockMP.toFixed(0);
+            
             // === Production par Produit ===
             const parProduit = {};
             filteredPeriod.forEach(l => {
