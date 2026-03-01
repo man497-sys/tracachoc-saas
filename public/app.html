@@ -17377,6 +17377,19 @@ Voulez-vous continuer ?`;
             updateRapportStats();
         }
         
+        function toggleMonthDetail(key) {
+            const detailRow = document.getElementById('detail-' + key);
+            const arrow = document.getElementById('arrow-' + key);
+            if (!detailRow) return;
+            if (detailRow.style.display === 'none') {
+                detailRow.style.display = '';
+                if (arrow) arrow.style.transform = 'rotate(90deg)';
+            } else {
+                detailRow.style.display = 'none';
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+        
         function updateRapportStats() {
             const dateDebut = document.getElementById('rapport-date-debut')?.value;
             const dateFin = document.getElementById('rapport-date-fin')?.value;
@@ -17458,12 +17471,46 @@ Voulez-vous continuer ?`;
                 } else {
                     tbodyMois.innerHTML = moisSorted.map(([key, data]) => {
                         const coutKg = data.kg > 0 ? data.cout / data.kg : 0;
-                        return `<tr>
-                            <td style="font-weight:600;">${data.label}</td>
+                        // Détail des lots de ce mois
+                        const lotsOfMonth = filteredPeriod.filter(l => {
+                            if (!l.date) return false;
+                            const d = new Date(l.date);
+                            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` === key;
+                        }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+                        
+                        const detailRows = lotsOfMonth.map(l => {
+                            const qkg = getLotQuantiteKg(l);
+                            const c = l.cout || 0;
+                            const ck = qkg > 0 ? c / qkg : 0;
+                            return `<tr style="background:#f5f5f5;font-size:13px;">
+                                <td style="padding-left:30px;">${l.produit || '-'} <span style="color:#999;font-size:11px;">(${l.numero || '-'})</span></td>
+                                <td style="text-align:center;">${l.date ? formatDate(l.date) : '-'}</td>
+                                <td style="text-align:right;">${qkg.toFixed(3)} kg</td>
+                                <td style="text-align:right;">${c.toFixed(2)} €</td>
+                                <td style="text-align:right;color:#666;">${ck.toFixed(2)} €/kg</td>
+                            </tr>`;
+                        }).join('');
+                        
+                        return `<tr onclick="toggleMonthDetail('${key}')" style="cursor:pointer;" title="Cliquer pour voir le détail">
+                            <td style="font-weight:600;"><span id="arrow-${key}" style="display:inline-block;transition:transform 0.2s;margin-right:6px;">▶</span>${data.label}</td>
                             <td style="text-align:right;">${data.lots}</td>
                             <td style="text-align:right;font-weight:600;">${data.kg.toFixed(1)} kg</td>
                             <td style="text-align:right;">${data.cout.toFixed(2)} €</td>
                             <td style="text-align:right;color:#666;">${coutKg.toFixed(2)} €/kg</td>
+                        </tr>
+                        <tr id="detail-${key}" style="display:none;">
+                            <td colspan="5" style="padding:0;">
+                                <table style="width:100%;border-collapse:collapse;">
+                                    <thead><tr style="background:#e0e0e0;font-size:12px;">
+                                        <th style="padding:6px 10px;text-align:left;">Produit (N° Lot)</th>
+                                        <th style="padding:6px 10px;text-align:center;">Date</th>
+                                        <th style="padding:6px 10px;text-align:right;">Quantité</th>
+                                        <th style="padding:6px 10px;text-align:right;">Coût</th>
+                                        <th style="padding:6px 10px;text-align:right;">Coût/kg</th>
+                                    </tr></thead>
+                                    <tbody>${detailRows}</tbody>
+                                </table>
+                            </td>
                         </tr>`;
                     }).join('');
                 }
