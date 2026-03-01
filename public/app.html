@@ -17455,21 +17455,33 @@ Voulez-vous continuer ?`;
             const parProduit = {};
             filteredPeriod.forEach(l => {
                 const nom = l.produit || 'Non défini';
-                if (!parProduit[nom]) parProduit[nom] = { lots: 0, kg: 0, cout: 0 };
+                if (!parProduit[nom]) parProduit[nom] = { lots: 0, kg: 0, cout: 0, couts: [], kgs: [], vendus: 0, enStock: 0 };
                 parProduit[nom].lots++;
-                parProduit[nom].kg += getLotQuantiteKg(l);
+                const qkg = getLotQuantiteKg(l);
+                parProduit[nom].kg += qkg;
                 parProduit[nom].cout += (l.cout || 0);
+                parProduit[nom].couts.push(l.cout || 0);
+                parProduit[nom].kgs.push(qkg);
+            });
+            // Compter vendus et en stock (tous les lots, pas seulement filtrés)
+            lots.forEach(l => {
+                const nom = l.produit || 'Non défini';
+                if (parProduit[nom]) {
+                    if (l.statut === 'vendu') parProduit[nom].vendus++;
+                    else if (l.statut === 'fini') parProduit[nom].enStock++;
+                }
             });
             
             const produitsSorted = Object.entries(parProduit).sort((a, b) => b[1].kg - a[1].kg);
             const tbodyProduit = document.querySelector('#rapport-par-produit tbody');
             if (tbodyProduit) {
                 if (produitsSorted.length === 0) {
-                    tbodyProduit.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Aucune production sur cette période</td></tr>';
+                    tbodyProduit.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;">Aucune production sur cette période</td></tr>';
                 } else {
                     tbodyProduit.innerHTML = produitsSorted.map(([nom, data]) => {
                         const pct = totalKg > 0 ? (data.kg / totalKg * 100) : 0;
                         const coutKg = data.kg > 0 ? data.cout / data.kg : 0;
+                        const moyKgLot = data.lots > 0 ? data.kg / data.lots : 0;
                         const barColor = pct > 20 ? '#4caf50' : pct > 10 ? '#ff9800' : '#2196f3';
                         return `<tr>
                             <td style="font-weight:600;">${nom}</td>
@@ -17477,6 +17489,9 @@ Voulez-vous continuer ?`;
                             <td style="text-align:right;font-weight:600;">${data.kg.toFixed(1)} kg</td>
                             <td style="text-align:right;">${data.cout.toFixed(2)} €</td>
                             <td style="text-align:right;color:#666;">${coutKg.toFixed(2)} €</td>
+                            <td style="text-align:right;color:#666;">${moyKgLot.toFixed(2)}</td>
+                            <td style="text-align:right;color:#2e7d32;">${data.vendus}</td>
+                            <td style="text-align:right;color:#1565c0;">${data.enStock}</td>
                             <td style="text-align:right;">
                                 <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;">
                                     <div style="width:80px;height:12px;background:#eee;border-radius:6px;overflow:hidden;">
@@ -17485,6 +17500,75 @@ Voulez-vous continuer ?`;
                                     <span style="font-weight:600;min-width:45px;">${pct.toFixed(1)}%</span>
                                 </div>
                             </td>
+                        </tr>`;
+                    }).join('');
+                }
+            }
+            // Footer totaux
+            const footerProduit = document.getElementById('rapport-par-produit-footer');
+            if (footerProduit && produitsSorted.length > 0) {
+                const tLots = produitsSorted.reduce((s, [,d]) => s + d.lots, 0);
+                const tKg = produitsSorted.reduce((s, [,d]) => s + d.kg, 0);
+                const tCout = produitsSorted.reduce((s, [,d]) => s + d.cout, 0);
+                const tCoutKg = tKg > 0 ? tCout / tKg : 0;
+                const tVendus = produitsSorted.reduce((s, [,d]) => s + d.vendus, 0);
+                const tStock = produitsSorted.reduce((s, [,d]) => s + d.enStock, 0);
+                footerProduit.innerHTML = `<tr style="background:linear-gradient(135deg,#efebe9,#d7ccc8);">
+                    <td style="font-weight:700;">TOTAL</td>
+                    <td style="text-align:right;">${tLots}</td>
+                    <td style="text-align:right;">${tKg.toFixed(1)} kg</td>
+                    <td style="text-align:right;">${tCout.toFixed(2)} €</td>
+                    <td style="text-align:right;">${tCoutKg.toFixed(2)} €</td>
+                    <td style="text-align:right;">${tLots > 0 ? (tKg/tLots).toFixed(2) : '-'}</td>
+                    <td style="text-align:right;color:#2e7d32;">${tVendus}</td>
+                    <td style="text-align:right;color:#1565c0;">${tStock}</td>
+                    <td style="text-align:right;">100%</td>
+                </tr>`;
+            }
+            
+            // === Analyse Coûts de Production ===
+            const lotsAvecCout = filteredPeriod.filter(l => (l.cout || 0) > 0);
+            const coutTotalProd = filteredPeriod.reduce((s, l) => s + (l.cout || 0), 0);
+            let coutMPTotal = 0;
+            filteredPeriod.forEach(l => {
+                let ingredients = l.ingredients;
+                if (typeof ingredients === 'string') { try { ingredients = JSON.parse(ingredients); } catch(e) { ingredients = []; } }
+                if (ingredients && !ingredients._isMixte && Array.isArray(ingredients)) {
+                    coutMPTotal += ingredients.reduce((s, ing) => s + (ing.coutTotal || 0), 0);
+                }
+            });
+            const coutMinLot = lotsAvecCout.length > 0 ? Math.min(...lotsAvecCout.map(l => l.cout)) : 0;
+            const coutMaxLot = lotsAvecCout.length > 0 ? Math.max(...lotsAvecCout.map(l => l.cout)) : 0;
+            
+            const el2 = id => document.getElementById(id);
+            if (el2('rapport-cout-total-prod')) el2('rapport-cout-total-prod').textContent = coutTotalProd.toFixed(2);
+            if (el2('rapport-cout-mp-total')) el2('rapport-cout-mp-total').textContent = coutMPTotal.toFixed(2);
+            if (el2('rapport-cout-min-lot')) el2('rapport-cout-min-lot').textContent = coutMinLot.toFixed(2);
+            if (el2('rapport-cout-max-lot')) el2('rapport-cout-max-lot').textContent = coutMaxLot.toFixed(2);
+            
+            // Tableau coûts détail par produit
+            const tbodyCouts = document.querySelector('#rapport-couts-detail tbody');
+            if (tbodyCouts) {
+                if (produitsSorted.length === 0) {
+                    tbodyCouts.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;">Aucune donnée</td></tr>';
+                } else {
+                    tbodyCouts.innerHTML = produitsSorted.map(([nom, data]) => {
+                        const cMin = data.couts.length > 0 ? Math.min(...data.couts.filter(c => c > 0)) : 0;
+                        const cMax = data.couts.length > 0 ? Math.max(...data.couts) : 0;
+                        const cMoy = data.lots > 0 ? data.cout / data.lots : 0;
+                        // Coût/kg par lot
+                        const coutsKg = data.kgs.map((kg, i) => kg > 0 ? data.couts[i] / kg : 0).filter(c => c > 0);
+                        const ckMin = coutsKg.length > 0 ? Math.min(...coutsKg) : 0;
+                        const ckMax = coutsKg.length > 0 ? Math.max(...coutsKg) : 0;
+                        const ckMoy = data.kg > 0 ? data.cout / data.kg : 0;
+                        return `<tr>
+                            <td style="font-weight:600;">${nom}</td>
+                            <td style="text-align:right;color:#2e7d32;">${cMin > 0 ? cMin.toFixed(2) : '-'} €</td>
+                            <td style="text-align:right;font-weight:600;">${cMoy.toFixed(2)} €</td>
+                            <td style="text-align:right;color:#c62828;">${cMax.toFixed(2)} €</td>
+                            <td style="text-align:right;color:#2e7d32;">${ckMin > 0 ? ckMin.toFixed(2) : '-'} €/kg</td>
+                            <td style="text-align:right;font-weight:600;">${ckMoy.toFixed(2)} €/kg</td>
+                            <td style="text-align:right;color:#c62828;">${ckMax.toFixed(2)} €/kg</td>
                         </tr>`;
                     }).join('');
                 }
