@@ -17388,11 +17388,16 @@ Voulez-vous continuer ?`;
             updateRapportStats();
         }
         
+        function getBaseProductName(name) {
+            if (!name) return '';
+            return name.replace(/\s*\(DLC:.*?\)\s*/g, '').trim();
+        }
+        
         function updateRapportFilterDropdowns() {
             const produitSelect = document.getElementById('rapport-filtre-produit');
             if (produitSelect) {
                 const current = produitSelect.value;
-                const produits = [...new Set(lots.map(l => l.produit).filter(Boolean))].sort();
+                const produits = [...new Set(lots.map(l => getBaseProductName(l.produit)).filter(Boolean))].sort();
                 produitSelect.innerHTML = '<option value="">-- Tous les produits --</option>' +
                     produits.map(p => `<option value="${p}">${p}</option>`).join('');
                 produitSelect.value = current;
@@ -17433,7 +17438,7 @@ Voulez-vous continuer ?`;
             let filteredPeriod = [...lots];
             if (dateDebut) filteredPeriod = filteredPeriod.filter(l => l.date >= dateDebut);
             if (dateFin) filteredPeriod = filteredPeriod.filter(l => l.date <= dateFin);
-            if (filtreProduit) filteredPeriod = filteredPeriod.filter(l => l.produit === filtreProduit);
+            if (filtreProduit) filteredPeriod = filteredPeriod.filter(l => getBaseProductName(l.produit) === filtreProduit);
             if (filtreStatut) filteredPeriod = filteredPeriod.filter(l => l.statut === filtreStatut);
             else filteredPeriod = filteredPeriod.filter(l => l.statut !== 'vendu');
             if (filtreOperateur) filteredPeriod = filteredPeriod.filter(l => l.operateur === filtreOperateur);
@@ -17499,7 +17504,7 @@ Voulez-vous continuer ?`;
             // === Production par Produit ===
             const parProduit = {};
             filteredPeriod.forEach(l => {
-                const nom = l.produit || 'Non défini';
+                const nom = getBaseProductName(l.produit) || 'Non défini';
                 if (!parProduit[nom]) parProduit[nom] = { lots: 0, kg: 0, cout: 0, couts: [], kgs: [], vendus: 0, enStock: 0 };
                 parProduit[nom].lots++;
                 const qkg = getLotQuantiteKg(l);
@@ -17510,7 +17515,7 @@ Voulez-vous continuer ?`;
             });
             // Compter vendus et en stock (tous les lots, pas seulement filtrés)
             lots.forEach(l => {
-                const nom = l.produit || 'Non défini';
+                const nom = getBaseProductName(l.produit) || 'Non défini';
                 if (parProduit[nom]) {
                     if (l.statut === 'vendu') parProduit[nom].vendus++;
                     else if (l.statut === 'fini') parProduit[nom].enStock++;
