@@ -5818,6 +5818,7 @@
                     loadGeneralSettings();
                     break;
                 case 'rapports':
+                    updateRapportFilterDropdowns();
                     if (!document.getElementById('rapport-date-debut').value) setRapportPeriod('month');
                     updateRapportStats();
                     break;
@@ -17377,6 +17378,35 @@ Voulez-vous continuer ?`;
             updateRapportStats();
         }
         
+        function resetRapportFilters() {
+            document.getElementById('rapport-date-debut').value = '';
+            document.getElementById('rapport-date-fin').value = '';
+            document.getElementById('rapport-filtre-produit').value = '';
+            document.getElementById('rapport-filtre-statut').value = '';
+            document.getElementById('rapport-filtre-operateur').value = '';
+            document.getElementById('rapport-filtre-recherche').value = '';
+            updateRapportStats();
+        }
+        
+        function updateRapportFilterDropdowns() {
+            const produitSelect = document.getElementById('rapport-filtre-produit');
+            if (produitSelect) {
+                const current = produitSelect.value;
+                const produits = [...new Set(lots.map(l => l.produit).filter(Boolean))].sort();
+                produitSelect.innerHTML = '<option value="">-- Tous les produits --</option>' +
+                    produits.map(p => `<option value="${p}">${p}</option>`).join('');
+                produitSelect.value = current;
+            }
+            const operateurSelect = document.getElementById('rapport-filtre-operateur');
+            if (operateurSelect) {
+                const current = operateurSelect.value;
+                const operateurs = [...new Set(lots.map(l => l.operateur).filter(Boolean))].sort();
+                operateurSelect.innerHTML = '<option value="">-- Tous --</option>' +
+                    operateurs.map(o => `<option value="${o}">${o}</option>`).join('');
+                operateurSelect.value = current;
+            }
+        }
+        
         function toggleMonthDetail(key) {
             const detailRow = document.getElementById('detail-' + key);
             const arrow = document.getElementById('arrow-' + key);
@@ -17393,11 +17423,26 @@ Voulez-vous continuer ?`;
         function updateRapportStats() {
             const dateDebut = document.getElementById('rapport-date-debut')?.value;
             const dateFin = document.getElementById('rapport-date-fin')?.value;
+            const filtreProduit = document.getElementById('rapport-filtre-produit')?.value || '';
+            const filtreStatut = document.getElementById('rapport-filtre-statut')?.value || '';
+            const filtreOperateur = document.getElementById('rapport-filtre-operateur')?.value || '';
+            const filtreRecherche = (document.getElementById('rapport-filtre-recherche')?.value || '').toLowerCase().trim();
             
-            // Filtrer les lots par période
-            let filteredPeriod = lots.filter(l => l.statut !== 'vendu');
+            updateRapportFilterDropdowns();
+            
+            let filteredPeriod = [...lots];
             if (dateDebut) filteredPeriod = filteredPeriod.filter(l => l.date >= dateDebut);
             if (dateFin) filteredPeriod = filteredPeriod.filter(l => l.date <= dateFin);
+            if (filtreProduit) filteredPeriod = filteredPeriod.filter(l => l.produit === filtreProduit);
+            if (filtreStatut) filteredPeriod = filteredPeriod.filter(l => l.statut === filtreStatut);
+            else filteredPeriod = filteredPeriod.filter(l => l.statut !== 'vendu');
+            if (filtreOperateur) filteredPeriod = filteredPeriod.filter(l => l.operateur === filtreOperateur);
+            if (filtreRecherche) filteredPeriod = filteredPeriod.filter(l => 
+                (l.produit || '').toLowerCase().includes(filtreRecherche) ||
+                (l.numero || '').toLowerCase().includes(filtreRecherche) ||
+                (l.operateur || '').toLowerCase().includes(filtreRecherche) ||
+                (l.observations || '').toLowerCase().includes(filtreRecherche)
+            );
             
             // Résumé global
             const totalLots = filteredPeriod.length;
