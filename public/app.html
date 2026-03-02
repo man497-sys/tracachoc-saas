@@ -17439,7 +17439,9 @@ Voulez-vous continuer ?`;
             if (dateDebut) filteredPeriod = filteredPeriod.filter(l => l.date >= dateDebut);
             if (dateFin) filteredPeriod = filteredPeriod.filter(l => l.date <= dateFin);
             if (filtreProduit) filteredPeriod = filteredPeriod.filter(l => getBaseProductName(l.produit) === filtreProduit);
-            if (filtreStatut) filteredPeriod = filteredPeriod.filter(l => l.statut === filtreStatut);
+            if (filtreStatut === 'all') { /* tout inclus */ }
+            else if (filtreStatut) filteredPeriod = filteredPeriod.filter(l => l.statut === filtreStatut);
+            else filteredPeriod = filteredPeriod.filter(l => l.statut !== 'vendu');
             if (filtreOperateur) filteredPeriod = filteredPeriod.filter(l => l.operateur === filtreOperateur);
             if (filtreRecherche) filteredPeriod = filteredPeriod.filter(l => 
                 (l.produit || '').toLowerCase().includes(filtreRecherche) ||
