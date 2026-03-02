@@ -5863,7 +5863,7 @@
                 }
             } else {
                 produitId = produitSelect.value;
-                produitText = produitSelect.selectedOptions[0] ? produitSelect.selectedOptions[0].text : produitSelect.value;
+                produitText = produitSelect.selectedOptions[0] ? produitSelect.selectedOptions[0].text.replace(/\s*\(DLC:.*?\)\s*/g, '').trim() : produitSelect.value;
             }
             
             let quantite, unite, quantiteAffichage, uniteAffichage, nombreRecettes = null;
