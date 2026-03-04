@@ -4357,18 +4357,65 @@
             if (!currentUser) return { active: false, plan: 'free' };
             
             try {
-                const response = await fetch('/.netlify/functions/check-subscription', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: currentUser.id })
-                });
-                const data = await response.json();
-                currentSubscription = data;
-                return data;
+                // Vérifier directement dans Supabase
+                const { data: sub, error } = await supabaseClient
+                    .from('subscriptions')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .maybeSingle();
+                
+                if (error) throw error;
+                
+                if (!sub) {
+                    // Vérifier les métadonnées du user (inscription via landing page)
+                    const meta = currentUser.user_metadata;
+                    if (meta && meta.plan === 'trial' && meta.trial_end) {
+                        const trialEnd = new Date(meta.trial_end);
+                        if (trialEnd > new Date()) {
+                            const daysLeft = Math.ceil((trialEnd - new Date()) / (1000*60*60*24));
+                            currentSubscription = { active: true, plan: 'trial', daysLeft, trialEnd: meta.trial_end };
+                            return currentSubscription;
+                        }
+                    }
+                    currentSubscription = { active: false, plan: 'free' };
+                    return currentSubscription;
+                }
+                
+                if (sub.status === 'active') {
+                    currentSubscription = { active: true, plan: sub.plan || 'pro', status: 'active' };
+                    return currentSubscription;
+                }
+                
+                if (sub.status === 'trial') {
+                    const trialEnd = new Date(sub.trial_end);
+                    if (trialEnd > new Date()) {
+                        const daysLeft = Math.ceil((trialEnd - new Date()) / (1000*60*60*24));
+                        currentSubscription = { active: true, plan: 'trial', daysLeft, trialEnd: sub.trial_end };
+                        return currentSubscription;
+                    } else {
+                        currentSubscription = { active: false, plan: 'trial_expired' };
+                        return currentSubscription;
+                    }
+                }
+                
+                currentSubscription = { active: false, plan: sub.plan || 'free', status: sub.status };
+                return currentSubscription;
+                
             } catch (error) {
                 console.error('Erreur vérification abonnement:', error);
-                // En cas d'erreur réseau, permettre l'accès (graceful degradation)
-                return { active: true, plan: 'pro' };
+                // Fallback Netlify Functions
+                try {
+                    const response = await fetch('/.netlify/functions/check-subscription', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: currentUser.id })
+                    });
+                    const data = await response.json();
+                    currentSubscription = data;
+                    return data;
+                } catch(e2) {
+                    return { active: true, plan: 'pro' };
+                }
             }
         }
         
